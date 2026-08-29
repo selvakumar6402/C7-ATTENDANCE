@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C7 Attendance</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f5f8;
+  color:#1e293b;
+}
+
+header{
+  background:#1e293b;
+  color:white;
+  padding:16px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+header h2{
+  margin:0;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:14px;
+  margin-bottom:20px;
+  box-shadow:0 3px 15px rgba(0,0,0,.08);
+}
+
+input,select{
+  width:100%;
+  padding:11px;
+  margin:6px 0 14px;
+  border:1px solid #d5dbe5;
+  border-radius:8px;
+  font-size:15px;
+}
+
+button{
+  border:0;
+  padding:11px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.primary{
+  background:#1e293b;
+  color:white;
+}
+
+.success{
+  background:#15803d;
+  color:white;
+}
+
+.danger{
+  background:#c0311a;
+  color:white;
+}
+
+.secondary{
+  background:#e8ecf2;
+  color:#1e293b;
+}
+
+.hidden{
+  display:none!important;
+}
+
+.login-buttons{
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+.login-buttons button{
+  flex:1;
+  min-width:150px;
+}
+
+h1,h2,h3{
+  margin-top:0;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+
+th,td{
+  padding:10px;
+  border-bottom:1px solid #e3e7ed;
+  text-align:left;
+  white-space:nowrap;
+}
+
+th{
+  background:#f7f8fa;
+}
+
+.table-wrap{
+  overflow-x:auto;
+}
+
+.status{
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.pending{
+  background:#eceff3;
+  color:#596273;
+}
+
+.approved{
+  background:#dcf5e5;
+  color:#15803d;
+}
+
+.declined{
+  background:#fde5e1;
+  color:#c0311a;
+}
+
+.actions{
+  display:flex;
+  gap:6px;
+}
+
+.actions button{
+  padding:7px 10px;
+}
+
+.message{
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:15px;
+  background:#fff3cd;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+
+@media(max-width:600px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  th,td{
+    font-size:13px;
+  }
+
+  .login-buttons{
+    flex-direction:column;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>7 C7 Attendance</h2>
+  <button id="logoutBtn" class="secondary hidden" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div id="loginScreen" class="card">
+  <h1>C7 Attendance</h1>
+  <p>Choose your login</p>
+
+  <div id="roleButtons" class="login-buttons">
+    <button class="primary" onclick="showEmployeeLogin()">Employee Login</button>
+    <button class="primary" onclick="showOwnerLogin()">Owner Login</button>
+  </div>
+
+  <!-- EMPLOYEE LOGIN -->
+  <div id="employeeLogin" class="hidden">
+    <h2>Employee Login</h2>
+
+    <label>Employee Name</label>
+    <select id="employeeName">
+      <option value="">Loading...</option>
+    </select>
+
+    <label>4 Digit PIN</label>
+    <input id="employeePin" type="password" inputmode="numeric" maxlength="4" placeholder="Enter PIN">
+
+    <button class="primary" onclick="employeeLogin()">Login</button>
+    <button class="secondary" onclick="backToLogin()">Back</button>
+  </div>
+
+  <!-- OWNER LOGIN -->
+  <div id="ownerLogin" class="hidden">
+    <h2>Owner Login</h2>
+
+    <label>Owner Password</label>
+    <input id="ownerPassword" type="password" placeholder="Enter password">
+
+    <button class="primary" onclick="ownerLogin()">Login</button>
+    <button class="secondary" onclick="backToLogin()">Back</button>
+  </div>
+
+  <div id="loginMessage"></div>
+</div>
+
+
+<!-- EMPLOYEE SCREEN -->
+<div id="employeeScreen" class="hidden">
+
+  <div class="card">
+    <h2 id="employeeWelcome"></h2>
+    <p>Enter today's attendance.</p>
+
+    <div class="grid">
+
+      <div>
+        <label>Date</label>
+        <input type="date" id="attDate">
+      </div>
+
+      <div>
+        <label>In Time</label>
+        <input type="time" id="inTime">
+      </div>
+
+      <div>
+        <label>Out Time</label>
+        <input type="time" id="outTime">
+      </div>
+
+      <div>
+        <label>Hours Worked</label>
+        <input type="text" id="hoursWorked" readonly>
+      </div>
+
+      <div>
+        <label>Total OT Hours</label>
+        <input type="text" id="otHours" readonly>
+      </div>
+
+    </div>
+
+    <button class="success" onclick="saveAttendance()">Submit Attendance</button>
+
+    <div id="employeeMessage"></div>
+  </div>
+
+
+  <div class="card">
+    <h2>My Attendance</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody id="employeeTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- OWNER SCREEN -->
+<div id="ownerScreen" class="hidden">
+
+  <div class="card">
+    <h2>Owner Dashboard</h2>
+    <p>View and manage employee attendance.</p>
+  </div>
+
+  <div class="card">
+    <h2>Attendance Records</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody id="ownerTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const API_URL =
+"https://script.google.com/macros/s/AKfycbyMLYwqYZQDMN46M4dVzNVIB_bXfaFrdLb4MzahPFTB7HOJ9xEu4rpcZhjOmBtjRGXS/exec";
+
+let allData = {
+  employees: [],
+  attendance: []
+};
+
+let currentEmployee = "";
+
+
+/* -----------------------------
+   LOAD DATA
+----------------------------- */
+
+async function loadData(){
+
+  try{
+
+    const response = await fetch(API_URL);
+    const data = await response.json();
+
+    if(data.success){
+
+      allData = data;
+
+      fillEmployeeList();
+
+    }
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+/* -----------------------------
+   EMPLOYEE LIST
+----------------------------- */
+
+function fillEmployeeList(){
+
+  const select =
+    document.getElementById("employeeName");
+
+  select.innerHTML =
+    '<option value="">Select employee</option>';
+
+  allData.employees.forEach(function(name){
+
+    const option =
+      document.createElement("option");
+
+    option.value = name;
+    option.textContent = name;
+
+    select.appendChild(option);
+
+  });
+
+}
+
+
+/* -----------------------------
+   LOGIN SCREENS
+----------------------------- */
+
+function showEmployeeLogin(){
+
+  document.getElementById("roleButtons")
+    .classList.add("hidden");
+
+  document.getElementById("employeeLogin")
+    .classList.remove("hidden");
+
+}
+
+function showOwnerLogin(){
+
+  document.getElementById("roleButtons")
+    .classList.add("hidden");
+
+  document.getElementById("ownerLogin")
+    .classList.remove("hidden");
+
+}
+
+function backToLogin(){
+
+  document.getElementById("roleButtons")
+    .classList.remove("hidden");
+
+  document.getElementById("employeeLogin")
+    .classList.add("hidden");
+
+  document.getElementById("ownerLogin")
+    .classList.add("hidden");
+
+  document.getElementById("loginMessage")
+    .innerHTML = "";
+
+}
+
+
+/* -----------------------------
+   EMPLOYEE LOGIN
+----------------------------- */
+
+async function employeeLogin(){
+
+  const name =
+    document.getElementById("employeeName").value;
+
+  const pin =
+    document.getElementById("employeePin").value;
+
+  if(!name || !pin){
+
+    showLoginMessage("Please enter name and PIN.");
+
+    return;
+
+  }
+
+  showLoginMessage("Checking...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+          action:"employeeLogin",
+          name:name,
+          pin:pin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      currentEmployee = data.name;
+
+      openEmployeeScreen();
+
+    }else{
+
+      showLoginMessage(data.message);
+
+    }
+
+  }catch(error){
+
+    showLoginMessage(
+      "Login failed. Please try again."
+    );
+
+  }
+
+}
+
+
+/* -----------------------------
+   OWNER LOGIN
+----------------------------- */
+
+async function ownerLogin(){
+
+  const password =
+    document.getElementById("ownerPassword").value;
+
+  if(!password){
+
+    showLoginMessage(
+      "Please enter owner password."
+    );
+
+    return;
+
+  }
+
+  showLoginMessage("Checking...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+          action:"ownerLogin",
+          password:password
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      openOwnerScreen();
+
+    }else{
+
+      showLoginMessage(data.message);
+
+    }
+
+  }catch(error){
+
+    showLoginMessage(
+      "Login failed. Please try again."
+    );
+
+  }
+
+}
+
+
+/* -----------------------------
+   OPEN SCREENS
+----------------------------- */
+
+function openEmployeeScreen(){
+
+  document.getElementById("loginScreen")
+    .classList.add("hidden");
+
+  document.getElementById("employeeScreen")
+    .classList.remove("hidden");
+
+  document.getElementById("logoutBtn")
+    .classList.remove("hidden");
+
+  document.getElementById("employeeWelcome")
+    .textContent =
+    "Welcome, " + currentEmployee;
+
+  const today =
+    new Date().toISOString().split("T")[0];
+
+  document.getElementById("attDate").value =
+    today;
+
+  renderEmployeeAttendance();
+
+}
+
+
+function openOwnerScreen(){
+
+  document.getElementById("loginScreen")
+    .classList.add("hidden");
+
+  document.getElementById("ownerScreen")
+    .classList.remove("hidden");
+
+  document.getElementById("logoutBtn")
+    .classList.remove("hidden");
+
+  renderOwnerAttendance();
+
+}
+
+
+/* -----------------------------
+   HOURS CALCULATION
+----------------------------- */
+
+function calculateHours(){
+
+  const inTime =
+    document.getElementById("inTime").value;
+
+  const outTime =
+    document.getElementById("outTime").value;
+
+  if(!inTime || !outTime){
+
+    document.getElementById("hoursWorked").value = "";
+    document.getElementById("otHours").value = "";
+
+    return;
+
+  }
+
+  const inParts =
+    inTime.split(":").map(Number);
+
+  const outParts =
+    outTime.split(":").map(Number);
+
+  let start =
+    inParts[0] * 60 + inParts[1];
+
+  let end =
+    outParts[0] * 60 + outParts[1];
+
+  if(end < start){
+    end += 24 * 60;
+  }
+
+  const totalMinutes =
+    end - start;
+
+  const totalHours =
+    totalMinutes / 60;
+
+  const ot =
+    Math.max(0,totalHours - 8);
+
+  document.getElementById("hoursWorked").value =
+    totalHours.toFixed(2);
+
+  document.getElementById("otHours").value =
+    ot.toFixed(2);
+
+}
+
+document.getElementById("inTime")
+  .addEventListener("change",calculateHours);
+
+document.getElementById("outTime")
+  .addEventListener("change",calculateHours);
+
+
+/* -----------------------------
+   SAVE ATTENDANCE
+----------------------------- */
+
+async function saveAttendance(){
+
+  const date =
+    document.getElementById("attDate").value;
+
+  const inTime =
+    document.getElementById("inTime").value;
+
+  const outTime =
+    document.getElementById("outTime").value;
+
+  const hoursWorked =
+    document.getElementById("hoursWorked").value;
+
+  const otHours =
+    document.getElementById("otHours").value;
+
+  if(!date || !inTime || !outTime){
+
+    showEmployeeMessage(
+      "Please enter Date, In Time and Out Time."
+    );
+
+    return;
+
+  }
+
+  showEmployeeMessage("Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+          action:"saveAttendance",
+          name:currentEmployee,
+          date:date,
+          inTime:inTime,
+          outTime:outTime,
+          hoursWorked:hoursWorked,
+          otHours:otHours,
+          status:"Pending"
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showEmployeeMessage(
+        "Attendance saved successfully."
+      );
+
+      document.getElementById("inTime").value="";
+      document.getElementById("outTime").value="";
+      document.getElementById("hoursWorked").value="";
+      document.getElementById("otHours").value="";
+
+      await loadData();
+
+      renderEmployeeAttendance();
+
+    }else{
+
+      showEmployeeMessage(data.message);
+
+    }
+
+  }catch(error){
+
+    showEmployeeMessage(
+      "Could not save attendance."
+    );
+
+  }
+
+}
+
+
+/* -----------------------------
+   EMPLOYEE ATTENDANCE
+----------------------------- */
+
+function renderEmployeeAttendance(){
+
+  const tbody =
+    document.getElementById("employeeTable");
+
+  tbody.innerHTML = "";
+
+  const records =
+    allData.attendance.filter(function(row){
+
+      return row.name === currentEmployee;
+
+    });
+
+  if(records.length === 0){
+
+    tbody.innerHTML =
+      "<tr><td colspan='6'>No attendance records yet.</td></tr>";
+
+    return;
+
+  }
+
+  records.forEach(function(row){
+
+    const tr =
+      document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${row.date}</td>
+      <td>${row.inTime || "-"}</td>
+      <td>${row.outTime || "-"}</td>
+      <td>${row.hoursWorked || "-"}</td>
+      <td>${row.otHours || "-"}</td>
+      <td>${statusBadge(row.status)}</td>
+    `;
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+/* -----------------------------
+   OWNER ATTENDANCE
+----------------------------- */
+
+function renderOwnerAttendance(){
+
+  const tbody =
+    document.getElementById("ownerTable");
+
+  tbody.innerHTML = "";
+
+  if(allData.attendance.length === 0){
+
+    tbody.innerHTML =
+      "<tr><td colspan='8'>No attendance records.</td></tr>";
+
+    return;
+
+  }
+
+  allData.attendance.forEach(function(row){
+
+    const tr =
+      document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${row.name}</td>
+      <td>${row.date}</td>
+      <td>${row.inTime || "-"}</td>
+      <td>${row.outTime || "-"}</td>
+      <td>${row.hoursWorked || "-"}</td>
+      <td>${row.otHours || "-"}</td>
+      <td>${statusBadge(row.status)}</td>
+      <td class="actions">
+
+        <button
+          class="success"
+          onclick="changeStatus('${escapeQuotes(row.name)}','${row.date}','Approved')">
+          Accept
+        </button>
+
+        <button
+          class="danger"
+          onclick="changeStatus('${escapeQuotes(row.name)}','${row.date}','Declined')">
+          Decline
+        </button>
+
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+/* -----------------------------
+   ACCEPT / DECLINE
+----------------------------- */
+
+async function changeStatus(name,date,status){
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+          action:"updateStatus",
+          name:name,
+          date:date,
+          status:status
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      await loadData();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      alert(data.message);
+
+    }
+
+  }catch(error){
+
+    alert("Could not update status.");
+
+  }
+
+}
+
+
+/* -----------------------------
+   STATUS BADGE
+----------------------------- */
+
+function statusBadge(status){
+
+  const s =
+    String(status || "Pending").toLowerCase();
+
+  let cls = "pending";
+
+  if(s === "approved") cls = "approved";
+  if(s === "declined") cls = "declined";
+
+  return `<span class="status ${cls}">
+    ${status || "Pending"}
+  </span>`;
+
+}
+
+
+/* -----------------------------
+   LOGOUT
+----------------------------- */
+
+function logout(){
+
+  currentEmployee = "";
+
+  document.getElementById("employeeScreen")
+    .classList.add("hidden");
+
+  document.getElementById("ownerScreen")
+    .classList.add("hidden");
+
+  document.getElementById("loginScreen")
+    .classList.remove("hidden");
+
+  document.getElementById("logoutBtn")
+    .classList.add("hidden");
+
+  backToLogin();
+
+}
+
+
+/* -----------------------------
+   MESSAGES
+----------------------------- */
+
+function showLoginMessage(text){
+
+  document.getElementById("loginMessage")
+    .innerHTML =
+    `<div class="message">${text}</div>`;
+
+}
+
+function showEmployeeMessage(text){
+
+  document.getElementById("employeeMessage")
+    .innerHTML =
+    `<div class="message">${text}</div>`;
+
+}
+
+
+/* -----------------------------
+   SECURITY
+----------------------------- */
+
+function escapeQuotes(text){
+
+  return String(text)
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'");
+
+}
+
+
+/* -----------------------------
+   START
+----------------------------- */
+
+loadData();
+
+</script>
+
+</body>
+</html>

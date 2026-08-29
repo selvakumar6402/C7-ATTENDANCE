@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>C7 Attendance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F3F5F8;
+    --surface:#FFFFFF;
+    --ink:#1B2434;
+    --ink-soft:#66748C;
+    --ink-faint:#9AA6B8;
+    --border:#E3E8F0;
+    --accent:#F59E0B;
+    --accent-ink:#8A4B04;
+    --accent-soft:#FEF3DD;
+    --primary:#1E293B;
+    --primary-soft:#2C3A52;
+    --success:#15803D;
+    --success-bg:#E1F5E9;
+    --danger:#C0311A;
+    --danger-bg:#FCE7E2;
+    --pending:#5B6478;
+    --pending-bg:#EAECF1;
+    --radius-lg:16px;
+    --radius-md:10px;
+    --radius-sm:7px;
+    --font-display:'Sora', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+    --shadow: 0 1px 2px rgba(20,25,40,0.04), 0 8px 24px rgba(20,25,40,0.06);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  button, input, select{ font-family:inherit; }
+  button{ cursor:pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px;
+    padding:12px 18px;
+    background:var(--primary);
+    color:#fff;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    position:relative;
+    width:38px; height:38px;
+    border-radius:10px;
+    background:linear-gradient(155deg, var(--accent), #C97A0A);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-weight:800; font-size:16px; color:#231400;
+    flex:none;
+    overflow:hidden;
+  }
+  .brand-mark::after{
+    content:"";
+    position:absolute;
+    width:2px; height:11px;
+    background:#231400;
+    top:6px; left:19px;
+    border-radius:2px;
+    transform-origin:bottom center;
+    animation:tick 6s steps(6) infinite;
+  }
+  @keyframes tick{
+    0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .brand-mark::after{ animation:none; }
+  }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.05; }
+  .brand-text b{ font-family:var(--font-display); font-weight:700; font-size:17px; letter-spacing:0.2px; }
+  .brand-text span{ font-size:11px; color:#B9C2D4; letter-spacing:0.4px; }
+
+  .topbar-right{ display:flex; align-items:center; gap:14px; }
+  .clock{
+    font-family:var(--font-mono); font-size:13px; color:#D8DEEA;
+    background:rgba(255,255,255,0.06);
+    padding:6px 10px; border-radius:8px;
+    display:none;
+  }
+  @media (min-width:520px){ .clock{ display:block; } }
+  .role-pill{
+    font-size:12px; font-weight:600; color:var(--primary);
+    background:var(--accent);
+    padding:5px 10px; border-radius:999px;
+  }
+  .btn-ghost-light{
+    background:transparent; border:1px solid rgba(255,255,255,0.25);
+    color:#fff; padding:7px 12px; border-radius:8px; font-size:13px; font-weight:600;
+  }
+  .btn-ghost-light:hover{ background:rgba(255,255,255,0.08); }
+
+  main{ max-width:1080px; margin:0 auto; padding:20px 16px 60px; }
+
+  /* ---------- Login ---------- */
+  .login-wrap{
+    display:flex; flex-direction:column; align-items:center;
+    padding:48px 16px; text-align:center;
+  }
+  .login-wrap h1{
+    font-family:var(--font-display); font-size:26px; margin:18px 0 6px;
+  }
+  .login-wrap p{ color:var(--ink-soft); margin:0 0 32px; font-size:14.5px; }
+  .role-cards{
+    display:flex; gap:16px; flex-wrap:wrap; justify-content:center; width:100%; max-width:560px;
+  }
+  .role-card{
+    flex:1 1 220px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:26px 20px;
+    text-align:left;
+    box-shadow:var(--shadow);
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  .role-card:hover{ transform:translateY(-2px); border-color:var(--accent); }
+  .role-card .icon{
+    width:42px; height:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft); color:var(--accent-ink); margin-bottom:14px;
+    font-size:19px; font-weight:700; font-family:var(--font-display);
+  }
+  .role-card h3{ margin:0 0 6px; font-family:var(--font-display); font-size:17px; }
+  .role-card p{ margin:0; font-size:13px; color:var(--ink-soft); }
+
+  .employee-pick-list{
+    display:flex; flex-direction:column; gap:8px; width:100%; max-width:360px; margin-top:10px;
+  }
+  .employee-pick-list button{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:12px 14px; text-align:left; font-size:14.5px; font-weight:600; color:var(--ink);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .employee-pick-list button:hover{ border-color:var(--accent); }
+  .employee-pick-list .chev{ color:var(--ink-faint); }
+  .back-link{
+    margin-top:22px; background:none; border:none; color:var(--ink-soft); font-size:13px; font-weight:600;
+    text-decoration:underline;
+  }
+
+  /* ---------- Section shells ---------- */
+  .section{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:18px; margin-bottom:18px; box-shadow:var(--shadow);
+  }
+  .section-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .section-head h2{ font-family:var(--font-display); font-size:16px; margin:0; }
+  .section-head .hint{ font-size:12px; color:var(--ink-faint); }
+
+  /* ---------- Employee chips (owner view) ---------- */
+  .emp-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+  .emp-chip{
+    display:flex; align-items:center; gap:9px;
+    border:1px solid var(--border); border-radius:999px; padding:7px 14px 7px 7px;
+    background:#FAFBFD; font-size:13.5px; font-weight:600;
+  }
+  .emp-chip.active{ border-color:var(--accent); background:var(--accent-soft); }
+  .emp-chip .avatar{
+    width:26px; height:26px; border-radius:50%; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:11.5px; font-family:var(--font-display); font-weight:700;
+  }
+  .emp-chip .count{ color:var(--ink-faint); font-weight:500; font-size:12px; }
+
+  form.inline-form{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+  .field{ display:flex; flex-direction:column; gap:4px; }
+  .field label{ font-size:11.5px; font-weight:600; color:var(--ink-soft); }
+  .field input, .field select{
+    border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13.5px; min-width:130px;
+    background:#fff; color:var(--ink);
+  }
+
+  .btn{
+    border:none; border-radius:8px; padding:9px 15px; font-size:13.5px; font-weight:700;
+  }
+  .btn-primary{ background:var(--primary); color:#fff; }
+  .btn-primary:hover{ background:var(--primary-soft); }
+  .btn-accent{ background:var(--accent); color:#231400; }
+  .btn-accent:hover{ filter:brightness(0.97); }
+  .btn-outline{ background:#fff; border:1px solid var(--border); color:var(--ink); }
+  .btn-outline:hover{ border-color:var(--ink-faint); }
+  .btn-sm{ padding:6px 10px; font-size:12.5px; border-radius:7px; }
+
+  /* ---------- Table ---------- */
+  .table-scroll{ width:100%; overflow-x:auto; }
+  table.att-table{ width:100%; border-collapse:collapse; min-width:720px; }
+  table.att-table th{
+    text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:0.4px;
+    color:var(--ink-faint); font-weight:700; padding:9px 10px; border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  table.att-table td{
+    padding:11px 10px; border-bottom:1px solid var(--border); font-size:13.5px; white-space:nowrap;
+  }
+  table.att-table tr:last-child td{ border-bottom:none; }
+  .hrs{ font-family:var(--font-mono); font-weight:600; }
+  .name-cell{ display:flex; align-items:center; gap:8px; }
+  .name-cell .avatar{
+    width:24px; height:24px; border-radius:50%; background:var(--primary); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:10.5px; font-family:var(--font-display); font-weight:700; flex:none;
+  }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px;
+    font-size:12px; font-weight:700;
+  }
+  .badge.approved{ background:var(--success-bg); color:var(--success); }
+  .badge.declined{ background:var(--danger-bg); color:var(--danger); }
+  .badge.pending{ background:var(--pending-bg); color:var(--pending); }
+  .badge .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+
+  .row-actions{ display:flex; gap:6px; }
+  .icon-btn{
+    width:30px; height:30px; border-radius:7px; border:1px solid var(--border); background:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+  }
+  .icon-btn.edit:hover{ border-color:var(--ink-faint); }
+  .icon-btn.approve{ color:var(--success); }
+  .icon-btn.approve:hover{ background:var(--success-bg); border-color:var(--success); }
+  .icon-btn.decline{ color:var(--danger); }
+  .icon-btn.decline:hover{ background:var(--danger-bg); border-color:var(--danger); }
+  .icon-btn:disabled{ opacity:0.35; cursor:not-allowed; }
+
+  .empty-state{
+    text-align:center; padding:34px 12px; color:var(--ink-faint); font-size:13.5px;
+  }
+
+  /* ---------- Reports ---------- */
+  .report-grid{ display:flex; gap:14px; flex-wrap:wrap; }
+  .report-card{
+    flex:1 1 220px; border:1px solid var(--border); border-radius:var(--radius-md); padding:14px;
+    display:flex; flex-direction:column; gap:10px; background:#FAFBFD;
+  }
+  .report-card h4{ margin:0; font-size:13.5px; font-family:var(--font-display); }
+  .report-card .row{ display:flex; gap:8px; align-items:end; flex-wrap:wrap; }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(15,20,32,0.45); display:flex; align-items:center; justify-content:center;
+    padding:16px; z-index:50;
+  }
+  .modal{
+    background:#fff; border-radius:var(--radius-lg); padding:22px; width:100%; max-width:400px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+  .modal h3{ font-family:var(--font-display); margin:0 0 4px; font-size:17px; }
+  .modal .sub{ font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; }
+  .modal .field{ margin-bottom:12px; width:100%; }
+  .modal .field input, .modal .field select{ width:100%; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:16px; }
+
+  .hidden{ display:none !important; }
+
+  /* ---------- Mobile stacked table ---------- */
+  @media (max-width: 680px){
+    table.att-table{ min-width:0; }
+    table.att-table thead{ display:none; }
+    table.att-table, table.att-table tbody, table.att-table tr, table.att-table td{ display:block; width:100%; }
+    table.att-table tr{
+      border:1px solid var(--border); border-radius:var(--radius-md); margin-bottom:10px; padding:6px 4px;
+    }
+    table.att-table td{
+      border-bottom:none; padding:7px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; white-space:normal;
+    }
+    table.att-table td::before{
+      content: attr(data-label); font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:0.3px;
+    }
+    table.att-table td.name-cell-td::before{ content:none; }
+    .row-actions{ justify-content:flex-end; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">7</div>
+    <div class="brand-text">
+      <b>C7 Attendance</b>
+      <span id="roleLabel">Sign in</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="clock" id="liveClock">--:--:--</div>
+    <button class="btn-ghost-light hidden" id="switchBtn">Switch role</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <section id="loginScreen" class="login-wrap">
+    <div class="brand-mark" style="width:56px;height:56px;font-size:22px;border-radius:14px;"><span style="display:contents"></span>7</div>
+    <h1>Welcome to C7 Attendance</h1>
+    <p>Choose how you'd like to continue.</p>
+
+    <div class="role-cards" id="roleCards">
+      <div class="role-card" id="ownerCard" role="button" tabindex="0">
+        <div class="icon">O</div>
+        <h3>I'm the Owner</h3>
+        <p>View every employee's attendance, edit records, approve or decline entries, and export reports.</p>
+      </div>
+      <div class="role-card" id="employeeCard" role="button" tabindex="0">
+        <div class="icon">E</div>
+        <h3>I'm an Employee</h3>
+        <p>Check your own attendance history and see whether it's been approved.</p>
+      </div>
+    </div>
+
+    <div class="employee-pick-list hidden" id="employeePickList"></div>
+    <button class="back-link hidden" id="backToRoles">← back</button>
+  </section>
+
+  <!-- OWNER SIDE -->
+  <section id="ownerScreen" class="hidden">
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Employees</h2>
+        <span class="hint" id="empCountHint"></span>
+      </div>
+      <div class="emp-grid" id="ownerEmpGrid"></div>
+
+      <form class="inline-form" id="addEmployeeForm">
+        <div class="field">
+          <label for="newEmpName">Add employee</label>
+          <input type="text" id="newEmpName" placeholder="Full name" required>
+        </div>
+        <button class="btn btn-outline" type="submit" style="align-self:flex-end;">+ Add employee</button>
+      </form>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Attendance records</h2>
+        <button class="btn btn-accent btn-sm" id="addRecordBtn">+ Add record</button>
+      </div>
+      <div class="table-scroll">
+        <table class="att-table">
+          <thead>
+            <tr>
+              <th>Employee</th><th>Date</th><th>In</th><th>Out</th><th>Total Hrs</th><th>OT Hrs</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ownerTableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state hidden" id="ownerEmptyState">No attendance records yet. Add one above.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2>Download reports</h2>
+      </div>
+      <div class="report-grid">
+        <div class="report-card">
+          <h4>Weekly report</h4>
+          <div class="row">
+            <div class="field">
+              <label for="weekPicker">Select week</label>
+              <input type="week" id="weekPicker">
+            </div>
+            <button class="btn btn-primary btn-sm" id="downloadWeekly">Download CSV</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <h4>Monthly report</h4>
+          <div class="row">
+            <div class="field">
+              <label for="monthPicker">Select month</label>
+              <input type="month" id="monthPicker">
+            </div>
+            <button class="btn btn-primary btn-sm" id="downloadMonthly">Download CSV</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EMPLOYEE SIDE -->
+  <section id="employeeScreen" class="hidden">
+    <div class="section">
+      <div class="section-head">
+        <h2 id="employeeGreeting">My attendance</h2>
+      </div>
+      <div class="table-scroll">
+        <table class="att-table">
+          <thead>
+            <tr><th>Date</th><th>In</th><th>Out</th><th>Total Hrs</th><th>OT Hrs</th><th>Status</th></tr>
+          </thead>
+          <tbody id="employeeTableBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state hidden" id="employeeEmptyState">No attendance records yet.</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Edit / Add record modal -->
+<div class="modal-backdrop hidden" id="modalBackdrop">
+  <div class="modal">
+    <h3 id="modalTitle">Edit record</h3>
+    <p class="sub" id="modalSub"></p>
+
+    <div class="field" id="modalEmpField">
+      <label for="modalEmployee">Employee</label>
+      <select id="modalEmployee"></select>
+    </div>
+    <div class="field">
+      <label for="modalDate">Date</label>
+      <input type="date" id="modalDate">
+    </div>
+    <div class="field">
+      <label for="modalIn">In time</label>
+      <input type="time" id="modalIn">
+    </div>
+    <div class="field">
+      <label for="modalOut">Out time</label>
+      <input type="time" id="modalOut">
+    </div>
+    <div class="field">
+      <label for="modalStatus">Approval status</label>
+      <select id="modalStatus">
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="declined">Declined</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'c7_attendance_v1';
+  let db = { employees: [], attendance: [] };
+  let currentRole = null;       // 'owner' | 'employee'
+  let currentEmployeeId = null;
+  let ownerFilterEmployeeId = 'all';
+  let editingRecordId = null;   // null => adding new
+
+  // ---------- Utilities ----------
+  function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+
+  function timeToDecimal(t){
+    if(!t) return null;
+    const [h,m] = t.split(':').map(Number);
+    return h + (m||0)/60;
+  }
+  function calcTotalHours(inTime, outTime){
+    const a = timeToDecimal(inTime), b = timeToDecimal(outTime);
+    if(a===null || b===null) return 0;
+    let diff = b - a;
+    if(diff < 0) diff += 24;
+    return Math.round(diff*100)/100;
+  }
+  function calcOT(totalHours){
+    return Math.max(0, Math.round((totalHours-8)*100)/100);
+  }
+  function fmtHrs(n){ return (n||0).toFixed(2); }
+  function initials(name){
+    return name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+  }
+  function fmtDateLong(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    return d.toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric', year:'numeric'});
+  }
+  function fmtTime12(t){
+    if(!t) return '—';
+    let [h,m] = t.split(':').map(Number);
+    const ap = h>=12 ? 'PM':'AM';
+    h = h%12; if(h===0) h=12;
+    return h+':'+String(m).padStart(2,'0')+' '+ap;
+  }
+
+  // ---------- Persistence ----------
+  function loadDB(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      try{ db = JSON.parse(raw); return; }catch(e){ /* fall through to seed */ }
+    }
+    seedData();
+    saveDB();
+  }
+  function saveDB(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  }
+  function seedData(){
+    const emp1 = uid('emp'), emp2 = uid('emp'), emp3 = uid('emp');
+    db.employees = [
+      { id: emp1, name: 'Arun Kumar' },
+      { id: emp2, name: 'Priya Suresh' },
+      { id: emp3, name: 'Karthik Raja' },
+    ];
+    const today = new Date();
+    function iso(d){ return d.toISOString().slice(0,10); }
+    db.attendance = [];
+    const sample = [
+      { emp: emp1, offset: -1, inT:'09:02', outT:'18:10', status:'approved' },
+      { emp: emp1, offset: -2, inT:'09:15', outT:'17:45', status:'pending' },
+      { emp: emp1, offset: -3, inT:'09:00', outT:'20:30', status:'approved' },
+      { emp: emp2, offset: -1, inT:'08:55', outT:'17:30', status:'pending' },
+      { emp: emp2, offset: -2, inT:'09:20', outT:'18:00', status:'declined' },
+      { emp: emp3, offset: -1, inT:'09:05', outT:'19:00', status:'approved' },
+      { emp: emp3, offset: -4, inT:'09:00', outT:'17:00', status:'pending' },
+    ];
+    sample.forEach(s=>{
+      const d = new Date(today); d.setDate(d.getDate()+s.offset);
+      const total = calcTotalHours(s.inT, s.outT);
+      db.attendance.push({
+        id: uid('att'), employeeId: s.emp, date: iso(d),
+        inTime: s.inT, outTime: s.outT,
+        totalHours: total, otHours: calcOT(total), status: s.status
+      });
+    });
+  }
+
+  function getEmployee(id){ return db.employees.find(e=>e.id===id); }
+  function attForEmployee(id){
+    return db.attendance.filter(a=>a.employeeId===id).sort((a,b)=> b.date.localeCompare(a.date));
+  }
+
+  // ---------- Live clock ----------
+  function tickClock(){
+    const el = document.getElementById('liveClock');
+    el.textContent = new Date().toLocaleTimeString();
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  // ---------- Navigation ----------
+  const loginScreen = document.getElementById('loginScreen');
+  const ownerScreen = document.getElementById('ownerScreen');
+  const employeeScreen = document.getElementById('employeeScreen');
+  const switchBtn = document.getElementById('switchBtn');
+  const roleLabel = document.getElementById('roleLabel');
+
+  function showLogin(){
+    currentRole = null; currentEmployeeId = null;
+    loginScreen.classList.remove('hidden');
+    ownerScreen.classList.add('hidden');
+    employeeScreen.classList.add('hidden');
+    switchBtn.classList.add('hidden');
+    roleLabel.textContent = 'Sign in';
+    document.getElementById('employeePickList').classList.add('hidden');
+    document.getElementById('backToRoles').classList.add('hidden');
+    document.getElementById('roleCards').classList.remove('hidden');
+  }
+  function showOwner(){
+    currentRole = 'owner';
+    loginScreen.classList.add('hidden');
+    ownerScreen.classList.remove('hidden');
+    employeeScreen.classList.add('hidden');
+    switchBtn.classList.remove('hidden');
+    roleLabel.textContent = 'Owner dashboard';
+    renderOwnerAll();
+  }
+  function showEmployee(empId){
+    currentRole = 'employee';
+    currentEmployeeId = empId;
+    loginScreen.classList.add('hidden');
+    ownerScreen.classList.add('hidden');
+    employeeScreen.classList.remove('hidden');
+    switchBtn.classList.remove('hidden');
+    const emp = getEmployee(empId);
+    roleLabel.textContent = emp ? emp.name : 'Employee';
+    document.getElementById('employeeGreeting').textContent = emp ? `My attendance — ${emp.name}` : 'My attendance';
+    renderEmployeeTable();
+  }
+
+  document.getElementById('ownerCard').addEventListener('click', showOwner);
+  document.getElementById('ownerCard').addEventListener('keydown', e=>{ if(e.key==='Enter') showOwner(); });
+
+  function openEmployeePicker(){
+    const list = document.getElementById('employeePickList');
+    list.innerHTML = '';
+    db.employees.forEach(emp=>{
+      const b = document.createElement('button');
+      b.innerHTML = `<span>${emp.name}</span><span class="chev">›</span>`;
+      b.addEventListener('click', ()=> showEmployee(emp.id));
+      list.appendChild(b);
+    });
+    list.classList.remove('hidden');
+    document.getElementById('roleCards').classList.add('hidden');
+    document.getElementById('backToRoles').classList.remove('hidden');
+  }
+  document.getElementById('employeeCard').addEventListener('click', openEmployeePicker);
+  document.getElementById('employeeCard').addEventListener('keydown', e=>{ if(e.key==='Enter') openEmployeePicker(); });
+  document.getElementById('backToRoles').addEventListener('click', ()=>{
+    document.getElementById('employeePickList').classList.add('hidden');
+    document.getElementById('backToRoles').classList.add('hidden');
+    document.getElementById('roleCards').classList.remove('hidden');
+  });
+  switchBtn.addEventListener('click', showLogin);
+
+  // ---------- Badge helper ----------
+  function badgeHtml(status){
+    const label = status.charAt(0).toUpperCase()+status.slice(1);
+    return `<span class="badge ${status}"><span class="dot"></span>${label}</span>`;
+  }
+
+  // ---------- Owner: employee chips ----------
+  function renderOwnerEmpGrid(){
+    const grid = document.getElementById('ownerEmpGrid');
+    grid.innerHTML = '';
+    const allChip = document.createElement('button');
+    allChip.className = 'emp-chip' + (ownerFilterEmployeeId==='all' ? ' active':'');
+    allChip.style.border = 'none';
+    allChip.style.background = ownerFilterEmployeeId==='all' ? 'var(--accent-soft)':'#FAFBFD';
+    allChip.innerHTML = `<span class="avatar" style="background:var(--ink-faint)">•</span> All employees <span class="count">${db.attendance.length}</span>`;
+    allChip.addEventListener('click', ()=>{ ownerFilterEmployeeId='all'; renderOwnerAll(); });
+    grid.appendChild(allChip);
+
+    db.employees.forEach(emp=>{
+      const count = attForEmployee(emp.id).length;
+      const chip = document.createElement('button');
+      chip.className = 'emp-chip' + (ownerFilterEmployeeId===emp.id ? ' active':'');
+      chip.style.border = 'none';
+      chip.innerHTML = `<span class="avatar">${initials(emp.name)}</span> ${emp.name} <span class="count">${count}</span>`;
+      chip.addEventListener('click', ()=>{ ownerFilterEmployeeId = emp.id; renderOwnerAll(); });
+      grid.appendChild(chip);
+    });
+    document.getElementById('empCountHint').textContent = `${db.employees.length} employee${db.employees.length===1?'':'s'}`;
+  }
+
+  // ---------- Owner: table ----------
+  function renderOwnerTable(){
+    const body = document.getElementById('ownerTableBody');
+    const emptyState = document.getElementById('ownerEmptyState');
+    body.innerHTML = '';
+    let rows = db.attendance.slice();
+    if(ownerFilterEmployeeId !== 'all'){
+      rows = rows.filter(r=>r.employeeId===ownerFilterEmployeeId);
+    }
+    rows.sort((a,b)=> b.date.localeCompare(a.date));
+
+    if(rows.length===0){
+      emptyState.classList.remove('hidden');
+    } else {
+      emptyState.classList.add('hidden');
+    }
+
+    rows.forEach(r=>{
+      const emp = getEmployee(r.employeeId);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="name-cell-td" data-label="Employee">
+          <div class="name-cell"><span class="avatar">${initials(emp ? emp.name : '?')}</span>${emp ? emp.name : 'Unknown'}</div>
+        </td>
+        <td data-label="Date">${fmtDateLong(r.date)}</td>
+        <td data-label="In">${fmtTime12(r.inTime)}</td>
+        <td data-label="Out">${fmtTime12(r.outTime)}</td>
+        <td data-label="Total Hrs" class="hrs">${fmtHrs(r.totalHours)}</td>
+        <td data-label="OT Hrs" class="hrs">${fmtHrs(r.otHours)}</td>
+        <td data-label="Status">${badgeHtml(r.status)}</td>
+        <td data-label="Actions">
+          <div class="row-actions">
+            <button class="icon-btn edit" title="Edit" data-id="${r.id}" data-action="edit">✎</button>
+            <button class="icon-btn approve" title="Approve" data-id="${r.id}" data-action="approve" ${r.status==='approved'?'disabled':''}>✓</button>
+            <button class="icon-btn decline" title="Decline" data-id="${r.id}" data-action="decline" ${r.status==='declined'?'disabled':''}>✕</button>
+          </div>
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+
+    body.querySelectorAll('button[data-action]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        if(action==='edit') openModal(id);
+        if(action==='approve') setStatus(id,'approved');
+        if(action==='decline') setStatus(id,'declined');
+      });
+    });
+  }
+
+  function setStatus(id, status){
+    const rec = db.attendance.find(a=>a.id===id);
+    if(!rec) return;
+    rec.status = status;
+    saveDB();
+    renderOwnerAll();
+  }
+
+  function renderOwnerAll(){
+    renderOwnerEmpGrid();
+    renderOwnerTable();
+  }
+
+  // ---------- Employee: table ----------
+  function renderEmployeeTable(){
+    const body = document.getElementById('employeeTableBody');
+    const emptyState = document.getElementById('employeeEmptyState');
+    body.innerHTML = '';
+    const rows = attForEmployee(currentEmployeeId);
+    if(rows.length===0){ emptyState.classList.remove('hidden'); } else { emptyState.classList.add('hidden'); }
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td data-label="Date">${fmtDateLong(r.date)}</td>
+        <td data-label="In">${fmtTime12(r.inTime)}</td>
+        <td data-label="Out">${fmtTime12(r.outTime)}</td>
+        <td data-label="Total Hrs" class="hrs">${fmtHrs(r.totalHours)}</td>
+        <td data-label="OT Hrs" class="hrs">${fmtHrs(r.otHours)}</td>
+        <td data-label="Status">${badgeHtml(r.status)}</td>
+      `;
+      body.appendChild(tr);
+    });
+  }
+
+  // ---------- Add employee ----------
+  document.getElementById('addEmployeeForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const input = document.getElementById('newEmpName');
+    const name = input.value.trim();
+    if(!name) return;
+    db.employees.push({ id: uid('emp'), name });
+    saveDB();
+    input.value = '';
+    renderOwnerAll();
+  });
+
+  // ---------- Modal (add / edit record) ----------
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modalEmpField = document.getElementById('modalEmpField');
+  const modalEmployee = document.getElementById('modalEmployee');
+  const modalDate = document.getElementById('modalDate');
+  const modalIn = document.getElementById('modalIn');
+  const modalOut = document.getElementById('modalOut');
+  const modalStatus = document.getElementById('modalStatus');
+
+  function openModal(recordId){
+    editingRecordId = recordId || null;
+    modalEmployee.innerHTML = db.employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+
+    if(editingRecordId){
+      const rec = db.attendance.find(a=>a.id===editingRecordId);
+      modalTitle.textContent = 'Edit attendance record';
+      modalSub.textContent = 'Update times or the approval status.';
+      modalEmpField.classList.add('hidden');
+      modalEmployee.value = rec.employeeId;
+      modalDate.value = rec.date;
+      modalIn.value = rec.inTime;
+      modalOut.value = rec.outTime;
+      modalStatus.value = rec.status;
+    } else {
+      modalTitle.textContent = 'Add attendance record';
+      modalSub.textContent = 'Manually log an in/out time for an employee.';
+      modalEmpField.classList.remove('hidden');
+      modalDate.value = new Date().toISOString().slice(0,10);
+      modalIn.value = '09:00';
+      modalOut.value = '18:00';
+      modalStatus.value = 'pending';
+    }
+    modalBackdrop.classList.remove('hidden');
+  }
+  function closeModal(){ modalBackdrop.classList.add('hidden'); editingRecordId = null; }
+
+  document.getElementById('addRecordBtn').addEventListener('click', ()=> openModal(null));
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
+
+  document.getElementById('modalSave').addEventListener('click', ()=>{
+    const date = modalDate.value;
+    const inT = modalIn.value;
+    const outT = modalOut.value;
+    const status = modalStatus.value;
+    if(!date || !inT || !outT){ return; }
+    const total = calcTotalHours(inT, outT);
+    const ot = calcOT(total);
+
+    if(editingRecordId){
+      const rec = db.attendance.find(a=>a.id===editingRecordId);
+      rec.date = date; rec.inTime = inT; rec.outTime = outT;
+      rec.totalHours = total; rec.otHours = ot; rec.status = status;
+    } else {
+      const empId = modalEmployee.value;
+      if(!empId) return;
+      db.attendance.push({
+        id: uid('att'), employeeId: empId, date, inTime: inT, outTime: outT,
+        totalHours: total, otHours: ot, status
+      });
+    }
+    saveDB();
+    closeModal();
+    renderOwnerAll();
+  });
+
+  // ---------- Reports (CSV export) ----------
+  function toCSV(rows){
+    const header = ['Employee','Date','In Time','Out Time','Total Hours','OT Hours','Status'];
+    const lines = [header.join(',')];
+    rows.forEach(r=>{
+      const emp = getEmployee(r.employeeId);
+      const line = [
+        `"${emp ? emp.name : 'Unknown'}"`,
+        r.date,
+        r.inTime,
+        r.outTime,
+        fmtHrs(r.totalHours),
+        fmtHrs(r.otHours),
+        r.status
+      ].join(',');
+      lines.push(line);
+    });
+    return lines.join('\n');
+  }
+  function downloadCSV(csv, filename){
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('downloadWeekly').addEventListener('click', ()=>{
+    const val = document.getElementById('weekPicker').value; // e.g. "2026-W35"
+    if(!val){ alert('Pick a week first.'); return; }
+    const [yearStr, weekStr] = val.split('-W');
+    const year = parseInt(yearStr,10), week = parseInt(weekStr,10);
+    // ISO week -> Monday date
+    const simple = new Date(Date.UTC(year,0,1 + (week-1)*7));
+    const dow = simple.getUTCDay();
+    const monday = new Date(simple);
+    const diff = (dow<=4 ? 1-dow : 8-dow);
+    monday.setUTCDate(simple.getUTCDate()+diff);
+    const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate()+6);
+    const startStr = monday.toISOString().slice(0,10);
+    const endStr = sunday.toISOString().slice(0,10);
+    const rows = db.attendance.filter(r=> r.date>=startStr && r.date<=endStr)
+      .sort((a,b)=> a.date.localeCompare(b.date) || (getEmployee(a.employeeId)?.name||'').localeCompare(getEmployee(b.employeeId)?.name||''));
+    if(rows.length===0){ alert('No records found for that week.'); return; }
+    downloadCSV(toCSV(rows), `C7-Attendance-Weekly-${startStr}_to_${endStr}.csv`);
+  });
+
+  document.getElementById('downloadMonthly').addEventListener('click', ()=>{
+    const val = document.getElementById('monthPicker').value; // e.g. "2026-08"
+    if(!val){ alert('Pick a month first.'); return; }
+    const rows = db.attendance.filter(r=> r.date.slice(0,7)===val)
+      .sort((a,b)=> a.date.localeCompare(b.date) || (getEmployee(a.employeeId)?.name||'').localeCompare(getEmployee(b.employeeId)?.name||''));
+    if(rows.length===0){ alert('No records found for that month.'); return; }
+    downloadCSV(toCSV(rows), `C7-Attendance-Monthly-${val}.csv`);
+  });
+
+  // ---------- Init ----------
+  loadDB();
+  showLogin();
+})();
+</script>
+</body>
+</html>

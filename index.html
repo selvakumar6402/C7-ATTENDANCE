@@ -410,54 +410,7 @@ function closeOwnerSettings(){
   document.getElementById("ownerSettings")
     .classList.add("hidden");
 }
-  async function changeOwnerPin(ownerName){
-
-  const currentPin = document.getElementById(
-    ownerName === "NAVIN"
-      ? "navinCurrentPin"
-      : "varshaCurrentPin"
-  ).value;
-
-  const newPin = document.getElementById(
-    ownerName === "NAVIN"
-      ? "navinNewPin"
-      : "varshaNewPin"
-  ).value;
-
-  if(!/^\d{4}$/.test(newPin)){
-    document.getElementById("pinMessage").innerHTML =
-      '<div class="message">New PIN must be exactly 4 digits.</div>';
-    return;
-  }
-
-  try{
-
-    const response = await fetch(API_URL,{
-      method:"POST",
-      body:JSON.stringify({
-        action:"setOwnerPin",
-        ownerName:ownerName,
-        currentPin:currentPin,
-        newPin:newPin
-      })
-    });
-
-    const data = await response.json();
-
-    document.getElementById("pinMessage").innerHTML =
-      '<div class="message">' +
-      (data.success
-        ? "PIN changed successfully."
-        : data.message) +
-      '</div>';
-
-  }catch(error){
-
-    document.getElementById("pinMessage").innerHTML =
-      '<div class="message">Could not change PIN.</div>';
-
-  }
-}
+ 
 </script>
   
 const API_URL =

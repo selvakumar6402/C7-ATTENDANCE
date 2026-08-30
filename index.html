@@ -301,10 +301,29 @@ th{
 <!-- OWNER SCREEN -->
 <div id="ownerScreen" class="hidden">
 
-  <div class="card">
-    <h2>Owner Dashboard</h2>
-    <p>View and manage employee attendance.</p>
+ <div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <h2>Owner Dashboard</h2>
+      <p>View and manage employee attendance.</p>
+    </div>
+
+    <button class="secondary" onclick="openOwnerSettings()" title="Settings">
+      ⚙️
+    </button>
   </div>
+</div>
+
+<!-- OWNER SETTINGS -->
+<div id="ownerSettings" class="card hidden">
+  <h2>⚙️ Owner Settings</h2>
+
+  <p>Manage your owner account settings.</p>
+
+  <button class="secondary" onclick="closeOwnerSettings()">
+    Back
+  </button>
+</div>
 
   <div class="card">
     <h2>Attendance Records</h2>
@@ -333,7 +352,19 @@ th{
 
 </div>
 
+function openOwnerSettings(){
 
+  document.getElementById("ownerSettings")
+    .classList.remove("hidden");
+
+}
+
+function closeOwnerSettings(){
+
+  document.getElementById("ownerSettings")
+    .classList.add("hidden");
+
+}
 <script>
 
 const API_URL =

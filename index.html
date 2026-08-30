@@ -245,16 +245,16 @@ th{
 
       <div>
         <label>In Time</label>
-        <input type="time" id="inTime">
+        <input type="time" id="inTime" readonly disabled>
       </div>
 
       <div>
         <label>Out Time</label>
-        <input type="time" id="outTime">
+        <input type="time" id="outTime" readonly disabled>
       </div>
 <div style="display:flex;gap:10px;margin:15px 0;">
-  <button type="button" onclick="checkIn()">Check In</button>
-  <button type="button" onclick="checkOut()">Check Out</button>
+  <button type="button" id="checkInBtn" onclick="checkIn()">Check In</button>
+  <button type="button" id="checkOutBtn" onclick="checkOut()">Check Out</button>
 </div>
       <div>
         <label>Hours Worked</label>
@@ -584,6 +584,8 @@ function openEmployeeScreen(){
   document.getElementById("attDate").value =
     today;
 
+  resetTimeEntry();
+
   renderEmployeeAttendance();
 
 }
@@ -607,6 +609,8 @@ function openOwnerScreen(){
 
 /* -----------------------------
    HOURS CALCULATION
+   Normal duty time = 10 hours.
+   Anything beyond 10 hours counts as Overtime.
 ----------------------------- */
 
 function calculateHours(){
@@ -649,7 +653,7 @@ function calculateHours(){
     totalMinutes / 60;
 
   const ot =
-    Math.max(0,totalHours - 8);
+    Math.max(0,totalHours - 10);
 
   document.getElementById("hoursWorked").value =
     totalHours.toFixed(2);
@@ -664,6 +668,25 @@ document.getElementById("inTime")
 
 document.getElementById("outTime")
   .addEventListener("change",calculateHours);
+
+
+/* -----------------------------
+   RESET TIME ENTRY
+   Clears In/Out time, hours, and re-enables the
+   Check In / Check Out buttons for a fresh entry.
+----------------------------- */
+
+function resetTimeEntry(){
+
+  document.getElementById("inTime").value = "";
+  document.getElementById("outTime").value = "";
+  document.getElementById("hoursWorked").value = "";
+  document.getElementById("otHours").value = "";
+
+  document.getElementById("checkInBtn").disabled = false;
+  document.getElementById("checkOutBtn").disabled = false;
+
+}
 
 
 /* -----------------------------
@@ -725,10 +748,7 @@ async function saveAttendance(){
         "Attendance saved successfully."
       );
 
-      document.getElementById("inTime").value="";
-      document.getElementById("outTime").value="";
-      document.getElementById("hoursWorked").value="";
-      document.getElementById("otHours").value="";
+      resetTimeEntry();
 
       await loadData();
 
@@ -987,16 +1007,55 @@ loadData();
 
 </script>
 <script>
+/* -----------------------------
+   CHECK IN / CHECK OUT
+   Records the actual current time at the moment the button
+   is tapped. The In Time / Out Time fields are readonly and
+   disabled, so they can only ever be set here - never typed
+   or edited manually. Once set, each field and its button
+   are locked until a new entry begins (resetTimeEntry()).
+----------------------------- */
+
 function checkIn() {
+
+  const inTimeField = document.getElementById("inTime");
+
+  if(inTimeField.value){
+    return; // already checked in - locked
+  }
+
   const now = new Date();
-  document.getElementById("inTime").value =
-    now.toTimeString().slice(0, 5);
+
+  const hh = String(now.getHours()).padStart(2,"0");
+  const mm = String(now.getMinutes()).padStart(2,"0");
+
+  inTimeField.value = hh + ":" + mm;
+
+  document.getElementById("checkInBtn").disabled = true;
+
+  calculateHours();
+
 }
 
 function checkOut() {
+
+  const outTimeField = document.getElementById("outTime");
+
+  if(outTimeField.value){
+    return; // already checked out - locked
+  }
+
   const now = new Date();
-  document.getElementById("outTime").value =
-    now.toTimeString().slice(0, 5);
+
+  const hh = String(now.getHours()).padStart(2,"0");
+  const mm = String(now.getMinutes()).padStart(2,"0");
+
+  outTimeField.value = hh + ":" + mm;
+
+  document.getElementById("checkOutBtn").disabled = true;
+
+  calculateHours();
+
 }
 </script>
   <script>

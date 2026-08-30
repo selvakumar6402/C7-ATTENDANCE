@@ -684,7 +684,7 @@ async function addEmployee(){
       await response.json();
 
     if(data.success){
-
+alert(JSON.stringify(data));
       message.innerHTML =
         '<div class="message">Employee added successfully.</div>';
 

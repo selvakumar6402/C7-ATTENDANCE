@@ -1,8 +1,11 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>C7 Attendance</title><style>
+<title>C7 Attendance</title>
+
+<style>
 *{box-sizing:border-box}
 
 body{
@@ -24,7 +27,7 @@ header{
 header h2{margin:0}
 
 .container{
-  max-width:1000px;
+  max-width:900px;
   margin:auto;
   padding:20px;
 }
@@ -59,12 +62,29 @@ button:disabled{
   cursor:not-allowed;
 }
 
-.primary{background:#1e293b;color:white}
-.success{background:#15803d;color:white}
-.danger{background:#c0311a;color:white}
-.secondary{background:#e8ecf2;color:#1e293b}
+.primary{
+  background:#1e293b;
+  color:white;
+}
 
-.hidden{display:none!important}
+.success{
+  background:#15803d;
+  color:white;
+}
+
+.danger{
+  background:#c0311a;
+  color:white;
+}
+
+.secondary{
+  background:#e8ecf2;
+  color:#1e293b;
+}
+
+.hidden{
+  display:none!important;
+}
 
 .login-buttons{
   display:flex;
@@ -77,7 +97,9 @@ button:disabled{
   min-width:150px;
 }
 
-h1,h2,h3{margin-top:0}
+h1,h2,h3{
+  margin-top:0;
+}
 
 table{
   width:100%;
@@ -92,9 +114,13 @@ th,td{
   white-space:nowrap;
 }
 
-th{background:#f7f8fa}
+th{
+  background:#f7f8fa;
+}
 
-.table-wrap{overflow-x:auto}
+.table-wrap{
+  overflow-x:auto;
+}
 
 .status{
   padding:5px 9px;
@@ -121,7 +147,6 @@ th{background:#f7f8fa}
 .actions{
   display:flex;
   gap:6px;
-  flex-wrap:wrap;
 }
 
 .actions button{
@@ -141,44 +166,8 @@ th{background:#f7f8fa}
   gap:12px;
 }
 
-.settings-row{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-}
-
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.45);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  z-index:1000;
-}
-
-.modal-box{
-  background:white;
-  width:100%;
-  max-width:500px;
-  padding:20px;
-  border-radius:14px;
-  max-height:90vh;
-  overflow:auto;
-}
-
-.owner-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:15px;
-}
-
 @media(max-width:600px){
-
-  .grid,
-  .settings-row{
+  .grid{
     grid-template-columns:1fr;
   }
 
@@ -189,372 +178,343 @@ th{background:#f7f8fa}
   .login-buttons{
     flex-direction:column;
   }
-
-  .owner-top{
-    align-items:flex-start;
-  }
 }
-</style></head><body><header>
+</style>
+</head>
+
+<body>
+
+<header>
   <h2>7 C7 Attendance</h2>
-  <button id="logoutBtn"
-          class="secondary hidden"
-          onclick="logout()">Logout</button>
-</header><div class="container"><!-- ================= LOGIN ================= --><div id="loginScreen" class="card">  <h1>C7 Attendance</h1>
-  <p>Choose your login</p>  <div id="roleButtons" class="login-buttons"><button class="primary"
-        onclick="showEmployeeLogin()">
-  Employee Login
-</button>
+  <button id="logoutBtn" class="secondary hidden" onclick="logout()">Logout</button>
+</header>
 
-<button class="primary"
-        onclick="showOwnerLogin()">
-  Owner Login
-</button>
+<div class="container">
 
-  </div>  <!-- EMPLOYEE LOGIN -->  <div id="employeeLogin" class="hidden"><h2>Employee Login</h2>
+<!-- LOGIN -->
+<div id="loginScreen" class="card">
 
-<label>Employee Name</label>
+  <h1>C7 Attendance</h1>
+  <p>Choose your login</p>
 
-<select id="employeeName">
-  <option value="">Loading...</option>
-</select>
+  <div id="roleButtons" class="login-buttons">
 
-<label>4 Digit PIN</label>
-
-<input id="employeePin"
-       type="password"
-       inputmode="numeric"
-       maxlength="4"
-       placeholder="Enter PIN">
-
-<button class="primary"
-        onclick="employeeLogin()">
-  Login
-</button>
-
-<button class="secondary"
-        onclick="backToLogin()">
-  Back
-</button>
-
-  </div>  <!-- OWNER LOGIN -->  <div id="ownerLogin" class="hidden"><h2>Owner Login</h2>
-
-<label>Owner</label>
-
-<select id="ownerName">
-
-  <option value="">Select Owner</option>
-
-  <option value="NAVIN">NAVIN</option>
-
-  <option value="VARSHA">VARSHA</option>
-
-</select>
-
-<label>Owner PIN</label>
-
-<input id="ownerPin"
-       type="password"
-       inputmode="numeric"
-       maxlength="4"
-       placeholder="Enter PIN">
-
-<button class="primary"
-        onclick="ownerLogin()">
-  Login
-</button>
-
-<button class="secondary"
-        onclick="backToLogin()">
-  Back
-</button>
-
-  </div>  <div id="loginMessage"></div></div><!-- ================= EMPLOYEE SCREEN ================= --><div id="employeeScreen" class="hidden">  <div class="card"><h2 id="employeeWelcome"></h2>
-
-<p>Enter today's attendance.</p>
-
-<div class="grid">
-
-  <div>
-    <label>Date</label>
-    <input type="date" id="attDate">
-  </div>
-
-  <div>
-    <label>In Time</label>
-
-    <input type="time"
-           id="inTime"
-           readonly
-           disabled>
-  </div>
-
-  <div>
-    <label>Out Time</label>
-
-    <input type="time"
-           id="outTime"
-           readonly
-           disabled>
-  </div>
-
-  <div style="display:flex;gap:10px;align-items:end">
-
-    <button type="button"
-            id="checkInBtn"
-            class="primary"
-            onclick="checkIn()">
-      Check In
+    <button class="primary" onclick="showEmployeeLogin()">
+      Employee Login
     </button>
 
-    <button type="button"
-            id="checkOutBtn"
-            class="success"
-            onclick="checkOut()">
-      Check Out
+    <button class="primary" onclick="showOwnerLogin()">
+      Owner Login
     </button>
 
   </div>
 
-  <div>
-    <label>Hours Worked</label>
+  <!-- EMPLOYEE LOGIN -->
+  <div id="employeeLogin" class="hidden">
 
-    <input type="text"
-           id="hoursWorked"
-           readonly>
-  </div>
+    <h2>Employee Login</h2>
 
-  <div>
-    <label>Total OT Hours</label>
+    <label>Employee Name</label>
 
-    <input type="text"
-           id="otHours"
-           readonly>
-  </div>
+    <select id="employeeName">
+      <option value="">Loading...</option>
+    </select>
 
-</div>
+    <label>4 Digit PIN</label>
 
-<button class="success"
-        onclick="saveAttendance()">
-  Submit Attendance
-</button>
+    <input
+      id="employeePin"
+      type="password"
+      inputmode="numeric"
+      maxlength="4"
+      placeholder="Enter PIN"
+    >
 
-<div id="employeeMessage"></div>
+    <button class="primary" onclick="employeeLogin()">
+      Login
+    </button>
 
-  </div>  <div class="card"><h2>My Attendance</h2>
-
-<div class="table-wrap">
-
-  <table>
-
-    <thead>
-
-      <tr>
-        <th>Date</th>
-        <th>In Time</th>
-        <th>Out Time</th>
-        <th>Hours Worked</th>
-        <th>OT Hours</th>
-        <th>Status</th>
-      </tr>
-
-    </thead>
-
-    <tbody id="employeeTable"></tbody>
-
-  </table>
-
-</div>
-
-  </div></div><!-- ================= OWNER SCREEN ================= --><div id="ownerScreen" class="hidden">  <div class="card"><div class="owner-top">
-
-  <div>
-    <h2>Owner Dashboard</h2>
-    <p id="ownerWelcome">
-      View and manage employee attendance.
-    </p>
-  </div>
-
-  <button class="secondary"
-          onclick="openOwnerSettings()"
-          title="Settings">
-    ⚙️
-  </button>
-
-</div>
-
-  </div>  <!-- OWNER SETTINGS -->  <div id="ownerSettings" class="card hidden"><h2>⚙️ Owner Settings</h2>
-
-<p>
-  Manage your owner account settings.
-</p>
-
-
-<!-- CHANGE PIN -->
-
-<div class="card">
-
-  <h3>Change My PIN</h3>
-
-  <label>Current PIN</label>
-
-  <input id="currentOwnerPin"
-         type="password"
-         inputmode="numeric"
-         maxlength="4"
-         placeholder="Current PIN">
-
-  <label>New PIN</label>
-
-  <input id="newOwnerPin"
-         type="password"
-         inputmode="numeric"
-         maxlength="4"
-         placeholder="New 4 Digit PIN">
-
-  <button class="primary"
-          onclick="changeOwnerPin()">
-    Change PIN
-  </button>
-
-  <div id="pinMessage"></div>
-
-</div>
-
-
-<!-- ADD EMPLOYEE -->
-
-<div class="card">
-
-  <h3>Add Employee</h3>
-
-  <label>Employee Name</label>
-
-  <input id="newEmployeeName"
-         type="text"
-         placeholder="Employee name">
-
-  <label>4 Digit PIN</label>
-
-  <input id="newEmployeePin"
-         type="password"
-         inputmode="numeric"
-         maxlength="4"
-         placeholder="Employee PIN">
-
-  <button class="success"
-          onclick="addEmployee()">
-    Add Employee
-  </button>
-
-  <div id="employeeManageMessage"></div>
-
-</div>
-
-
-<!-- EMPLOYEE LIST -->
-
-<div class="card">
-
-  <h3>Employees</h3>
-
-  <div class="table-wrap">
-
-    <table>
-
-      <thead>
-
-        <tr>
-          <th>Name</th>
-          <th>Action</th>
-        </tr>
-
-      </thead>
-
-      <tbody id="manageEmployeeTable"></tbody>
-
-    </table>
+    <button class="secondary" onclick="backToLogin()">
+      Back
+    </button>
 
   </div>
 
-</div>
 
+  <!-- OWNER LOGIN -->
+  <div id="ownerLogin" class="hidden">
 
-<button class="secondary"
-        onclick="closeOwnerSettings()">
-  Back
-</button>
+    <h2>Owner Login</h2>
 
-  </div>  <!-- ATTENDANCE -->  <div class="card"><h2>Attendance Records</h2>
+    <label>Owner</label>
 
-<div class="table-wrap">
+    <select id="ownerName">
 
-  <table>
+      <option value="">Select Owner</option>
 
-    <thead>
+      <option value="NAVIN">NAVIN</option>
 
-      <tr>
-        <th>Employee Name</th>
-        <th>Date</th>
-        <th>In Time</th>
-        <th>Out Time</th>
-        <th>Hours Worked</th>
-        <th>OT Hours</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
+      <option value="VARSHA">VARSHA</option>
 
-    </thead>
+    </select>
 
-    <tbody id="ownerTable"></tbody>
+    <label>Owner PIN</label>
 
-  </table>
+    <input
+      id="ownerPin"
+      type="password"
+      inputmode="numeric"
+      maxlength="4"
+      placeholder="Enter PIN"
+    >
 
-</div>
+    <button class="primary" onclick="ownerLogin()">
+      Login
+    </button>
 
-  </div></div></div><!-- ================= EDIT ATTENDANCE MODAL ================= --><div id="editModal"
-     class="modal hidden">  <div class="modal-box"><h2>✏️ Edit Attendance</h2>
+    <button class="secondary" onclick="backToLogin()">
+      Back
+    </button>
 
-<p id="editEmployeeDate"></p>
+  </div>
 
-<label>In Time</label>
-
-<input type="time"
-       id="editInTime">
-
-<label>Out Time</label>
-
-<input type="time"
-       id="editOutTime">
-
-<label>Hours Worked</label>
-
-<input type="text"
-       id="editHoursWorked"
-       readonly>
-
-<label>OT Hours</label>
-
-<input type="text"
-       id="editOtHours"
-       readonly>
-
-<div style="display:flex;gap:10px">
-
-  <button class="success"
-          onclick="saveEditedAttendance()">
-    Save
-  </button>
-
-  <button class="secondary"
-          onclick="closeEditModal()">
-    Cancel
-  </button>
+  <div id="loginMessage"></div>
 
 </div>
 
-<div id="editMessage"></div>
 
-  </div></div><script>
+<!-- EMPLOYEE SCREEN -->
+<div id="employeeScreen" class="hidden">
+
+  <div class="card">
+
+    <h2 id="employeeWelcome"></h2>
+
+    <p>Enter today's attendance.</p>
+
+    <div class="grid">
+
+      <div>
+
+        <label>Date</label>
+
+        <input
+          type="date"
+          id="attDate"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label>In Time</label>
+
+        <input
+          type="time"
+          id="inTime"
+          readonly
+          disabled
+        >
+
+      </div>
+
+
+      <div>
+
+        <label>Out Time</label>
+
+        <input
+          type="time"
+          id="outTime"
+          readonly
+          disabled
+        >
+
+      </div>
+
+    </div>
+
+
+    <div style="display:flex;gap:10px;margin:15px 0;">
+
+      <button
+        type="button"
+        id="checkInBtn"
+        class="primary"
+        onclick="checkIn()"
+      >
+        Check In
+      </button>
+
+      <button
+        type="button"
+        id="checkOutBtn"
+        class="primary"
+        onclick="checkOut()"
+      >
+        Check Out
+      </button>
+
+    </div>
+
+
+    <div class="grid">
+
+      <div>
+
+        <label>Hours Worked</label>
+
+        <input
+          type="text"
+          id="hoursWorked"
+          readonly
+        >
+
+      </div>
+
+
+      <div>
+
+        <label>Total OT Hours</label>
+
+        <input
+          type="text"
+          id="otHours"
+          readonly
+        >
+
+      </div>
+
+    </div>
+
+
+    <button
+      class="success"
+      onclick="saveAttendance()"
+    >
+      Submit Attendance
+    </button>
+
+    <div id="employeeMessage"></div>
+
+  </div>
+
+
+  <div class="card">
+
+    <h2>My Attendance</h2>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="employeeTable"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- OWNER SCREEN -->
+<div id="ownerScreen" class="hidden">
+
+  <div class="card">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+
+      <div>
+
+        <h2>Owner Dashboard</h2>
+
+        <p>View and manage employee attendance.</p>
+
+      </div>
+
+      <button
+        class="secondary"
+        onclick="openOwnerSettings()"
+        title="Settings"
+      >
+        ⚙️
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- OWNER SETTINGS -->
+  <div id="ownerSettings" class="card hidden">
+
+    <h2>⚙️ Owner Settings</h2>
+
+    <p>Manage your owner account settings.</p>
+
+    <button
+      class="secondary"
+      onclick="closeOwnerSettings()"
+    >
+      Back
+    </button>
+
+  </div>
+
+
+  <div class="card">
+
+    <h2>Attendance Records</h2>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Employee Name</th>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="ownerTable"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>
+
+</div>
+
+
+<script>
 
 const API_URL =
 "https://script.google.com/macros/s/AKfycbyMLYwqYZQDMN46M4dVzNVIB_bXfaFrdLb4MzahPFTB7HOJ9xEu4rpcZhjOmBtjRGXS/exec";
@@ -567,17 +527,28 @@ let allData = {
 
 let currentEmployee = "";
 
-let currentOwner = "";
 
-let editRecord = {
-  name:"",
-  date:""
-};
+/* OWNER SETTINGS */
+
+function openOwnerSettings(){
+
+  document
+    .getElementById("ownerSettings")
+    .classList.remove("hidden");
+
+}
 
 
-/* =========================
-   LOAD DATA
-========================= */
+function closeOwnerSettings(){
+
+  document
+    .getElementById("ownerSettings")
+    .classList.add("hidden");
+
+}
+
+
+/* LOAD DATA */
 
 async function loadData(){
 
@@ -595,8 +566,6 @@ async function loadData(){
 
       fillEmployeeList();
 
-      renderManageEmployees();
-
     }
 
   }catch(error){
@@ -608,9 +577,7 @@ async function loadData(){
 }
 
 
-/* =========================
-   EMPLOYEE LIST
-========================= */
+/* EMPLOYEE LIST */
 
 function fillEmployeeList(){
 
@@ -636,16 +603,16 @@ function fillEmployeeList(){
 }
 
 
-/* =========================
-   LOGIN SCREENS
-========================= */
+/* LOGIN SCREENS */
 
 function showEmployeeLogin(){
 
-  document.getElementById("roleButtons")
+  document
+    .getElementById("roleButtons")
     .classList.add("hidden");
 
-  document.getElementById("employeeLogin")
+  document
+    .getElementById("employeeLogin")
     .classList.remove("hidden");
 
 }
@@ -653,10 +620,12 @@ function showEmployeeLogin(){
 
 function showOwnerLogin(){
 
-  document.getElementById("roleButtons")
+  document
+    .getElementById("roleButtons")
     .classList.add("hidden");
 
-  document.getElementById("ownerLogin")
+  document
+    .getElementById("ownerLogin")
     .classList.remove("hidden");
 
 }
@@ -664,24 +633,26 @@ function showOwnerLogin(){
 
 function backToLogin(){
 
-  document.getElementById("roleButtons")
+  document
+    .getElementById("roleButtons")
     .classList.remove("hidden");
 
-  document.getElementById("employeeLogin")
+  document
+    .getElementById("employeeLogin")
     .classList.add("hidden");
 
-  document.getElementById("ownerLogin")
+  document
+    .getElementById("ownerLogin")
     .classList.add("hidden");
 
-  document.getElementById("loginMessage")
+  document
+    .getElementById("loginMessage")
     .innerHTML = "";
 
 }
 
 
-/* =========================
-   EMPLOYEE LOGIN
-========================= */
+/* EMPLOYEE LOGIN */
 
 async function employeeLogin(){
 
@@ -694,7 +665,7 @@ async function employeeLogin(){
   if(!name || !pin){
 
     showLoginMessage(
-      "Please select employee and enter PIN."
+      "Please enter name and PIN."
     );
 
     return;
@@ -708,6 +679,7 @@ async function employeeLogin(){
     const response =
       await fetch(API_URL,{
         method:"POST",
+
         body:JSON.stringify({
           action:"employeeLogin",
           name:name,
@@ -741,9 +713,7 @@ async function employeeLogin(){
 }
 
 
-/* =========================
-   OWNER LOGIN
-========================= */
+/* OWNER LOGIN */
 
 async function ownerLogin(){
 
@@ -770,6 +740,7 @@ async function ownerLogin(){
     const response =
       await fetch(API_URL,{
         method:"POST",
+
         body:JSON.stringify({
           action:"ownerLogin",
           ownerName:ownerName,
@@ -781,8 +752,6 @@ async function ownerLogin(){
       await response.json();
 
     if(data.success){
-
-      currentOwner = data.name;
 
       openOwnerScreen();
 
@@ -803,30 +772,33 @@ async function ownerLogin(){
 }
 
 
-/* =========================
-   OPEN EMPLOYEE
-========================= */
+/* OPEN EMPLOYEE SCREEN */
 
 function openEmployeeScreen(){
 
-  document.getElementById("loginScreen")
+  document
+    .getElementById("loginScreen")
     .classList.add("hidden");
 
-  document.getElementById("employeeScreen")
+  document
+    .getElementById("employeeScreen")
     .classList.remove("hidden");
 
-  document.getElementById("logoutBtn")
+  document
+    .getElementById("logoutBtn")
     .classList.remove("hidden");
 
-  document.getElementById("employeeWelcome")
+  document
+    .getElementById("employeeWelcome")
     .textContent =
     "Welcome, " + currentEmployee;
 
   const today =
     new Date().toISOString().split("T")[0];
 
-  document.getElementById("attDate").value =
-    today;
+  document
+    .getElementById("attDate")
+    .value = today;
 
   resetTimeEntry();
 
@@ -835,44 +807,116 @@ function openEmployeeScreen(){
 }
 
 
-/* =========================
-   OPEN OWNER
-========================= */
+/* OPEN OWNER SCREEN */
 
 function openOwnerScreen(){
 
-  document.getElementById("loginScreen")
+  document
+    .getElementById("loginScreen")
     .classList.add("hidden");
 
-  document.getElementById("ownerScreen")
+  document
+    .getElementById("ownerScreen")
     .classList.remove("hidden");
 
-  document.getElementById("logoutBtn")
+  document
+    .getElementById("logoutBtn")
     .classList.remove("hidden");
-
-  document.getElementById("ownerWelcome")
-    .textContent =
-    "Logged in as " + currentOwner;
 
   renderOwnerAttendance();
-
-  renderManageEmployees();
 
 }
 
 
-/* =========================
-   HOURS CALCULATION
-========================= */
+/* CHECK IN */
 
-function calculateTimeValues(inTime,outTime){
+function checkIn(){
+
+  const field =
+    document.getElementById("inTime");
+
+  if(field.value){
+
+    return;
+
+  }
+
+  const now =
+    new Date();
+
+  const hh =
+    String(now.getHours()).padStart(2,"0");
+
+  const mm =
+    String(now.getMinutes()).padStart(2,"0");
+
+  field.value =
+    hh + ":" + mm;
+
+  document
+    .getElementById("checkInBtn")
+    .disabled = true;
+
+  calculateHours();
+
+}
+
+
+/* CHECK OUT */
+
+function checkOut(){
+
+  const field =
+    document.getElementById("outTime");
+
+  if(field.value){
+
+    return;
+
+  }
+
+  const now =
+    new Date();
+
+  const hh =
+    String(now.getHours()).padStart(2,"0");
+
+  const mm =
+    String(now.getMinutes()).padStart(2,"0");
+
+  field.value =
+    hh + ":" + mm;
+
+  document
+    .getElementById("checkOutBtn")
+    .disabled = true;
+
+  calculateHours();
+
+}
+
+
+/* CALCULATE HOURS */
+
+function calculateHours(){
+
+  const inTime =
+    document.getElementById("inTime").value;
+
+  const outTime =
+    document.getElementById("outTime").value;
 
   if(!inTime || !outTime){
 
-    return {
-      hours:"",
-      ot:""
-    };
+    document
+      .getElementById("hoursWorked")
+      .value = "";
+
+    document
+      .getElementById("otHours")
+      .value = "";
+
+    return;
 
   }
 
@@ -903,143 +947,51 @@ function calculateTimeValues(inTime,outTime){
   const ot =
     Math.max(0,totalHours - 10);
 
-  return {
-    hours:totalHours.toFixed(2),
-    ot:ot.toFixed(2)
-  };
+  document
+    .getElementById("hoursWorked")
+    .value =
+    totalHours.toFixed(2);
+
+  document
+    .getElementById("otHours")
+    .value =
+    ot.toFixed(2);
 
 }
 
 
-function calculateHours(){
-
-  const inTime =
-    document.getElementById("inTime").value;
-
-  const outTime =
-    document.getElementById("outTime").value;
-
-  const result =
-    calculateTimeValues(inTime,outTime);
-
-  document.getElementById("hoursWorked").value =
-    result.hours;
-
-  document.getElementById("otHours").value =
-    result.ot;
-
-}
-
-
-/* =========================
-   RESET TIME
-========================= */
+/* RESET */
 
 function resetTimeEntry(){
 
-  document.getElementById("inTime").value = "";
+  document
+    .getElementById("inTime")
+    .value = "";
 
-  document.getElementById("outTime").value = "";
+  document
+    .getElementById("outTime")
+    .value = "";
 
-  document.getElementById("hoursWorked").value = "";
+  document
+    .getElementById("hoursWorked")
+    .value = "";
 
-  document.getElementById("otHours").value = "";
+  document
+    .getElementById("otHours")
+    .value = "";
 
-  document.getElementById("checkInBtn").disabled =
-    false;
+  document
+    .getElementById("checkInBtn")
+    .disabled = false;
 
-  document.getElementById("checkOutBtn").disabled =
-    false;
-
-}
-
-
-/* =========================
-   CHECK IN
-========================= */
-
-function checkIn(){
-
-  const field =
-    document.getElementById("inTime");
-
-  if(field.value){
-
-    return;
-
-  }
-
-  const now =
-    new Date();
-
-  const hh =
-    String(now.getHours()).padStart(2,"0");
-
-  const mm =
-    String(now.getMinutes()).padStart(2,"0");
-
-  field.value =
-    hh + ":" + mm;
-
-  document.getElementById("checkInBtn")
-    .disabled = true;
-
-  calculateHours();
+  document
+    .getElementById("checkOutBtn")
+    .disabled = false;
 
 }
 
 
-/* =========================
-   CHECK OUT
-========================= */
-
-function checkOut(){
-
-  const inTime =
-    document.getElementById("inTime").value;
-
-  if(!inTime){
-
-    showEmployeeMessage(
-      "Please Check In first."
-    );
-
-    return;
-
-  }
-
-  const field =
-    document.getElementById("outTime");
-
-  if(field.value){
-
-    return;
-
-  }
-
-  const now =
-    new Date();
-
-  const hh =
-    String(now.getHours()).padStart(2,"0");
-
-  const mm =
-    String(now.getMinutes()).padStart(2,"0");
-
-  field.value =
-    hh + ":" + mm;
-
-  document.getElementById("checkOutBtn")
-    .disabled = true;
-
-  calculateHours();
-
-}
-
-
-/* =========================
-   SAVE ATTENDANCE
-========================= */
+/* SAVE ATTENDANCE */
 
 async function saveAttendance(){
 
@@ -1061,7 +1013,7 @@ async function saveAttendance(){
   if(!date || !inTime || !outTime){
 
     showEmployeeMessage(
-      "Please Check In and Check Out first."
+      "Please enter Date, In Time and Out Time."
     );
 
     return;
@@ -1075,6 +1027,7 @@ async function saveAttendance(){
     const response =
       await fetch(API_URL,{
         method:"POST",
+
         body:JSON.stringify({
           action:"saveAttendance",
           name:currentEmployee,
@@ -1096,11 +1049,11 @@ async function saveAttendance(){
         "Attendance saved successfully."
       );
 
+      resetTimeEntry();
+
       await loadData();
 
       renderEmployeeAttendance();
-
-      resetTimeEntry();
 
     }else{
 
@@ -1119,9 +1072,7 @@ async function saveAttendance(){
 }
 
 
-/* =========================
-   EMPLOYEE ATTENDANCE
-========================= */
+/* EMPLOYEE ATTENDANCE */
 
 function renderEmployeeAttendance(){
 
@@ -1151,14 +1102,13 @@ function renderEmployeeAttendance(){
     const tr =
       document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${escapeHtml(row.date)}</td>
-      <td>${escapeHtml(row.inTime || "-")}</td>
-      <td>${escapeHtml(row.outTime || "-")}</td>
-      <td>${escapeHtml(row.hoursWorked || "-")}</td>
-      <td>${escapeHtml(row.otHours || "-")}</td>
-      <td>${statusBadge(row.status)}</td>
-    `;
+    tr.innerHTML =
+      "<td>" + row.date + "</td>" +
+      "<td>" + (row.inTime || "-") + "</td>" +
+      "<td>" + (row.outTime || "-") + "</td>" +
+      "<td>" + (row.hoursWorked || "-") + "</td>" +
+      "<td>" + (row.otHours || "-") + "</td>" +
+      "<td>" + statusBadge(row.status) + "</td>";
 
     tbody.appendChild(tr);
 
@@ -1167,9 +1117,7 @@ function renderEmployeeAttendance(){
 }
 
 
-/* =========================
-   OWNER ATTENDANCE
-========================= */
+/* OWNER ATTENDANCE */
 
 function renderOwnerAttendance(){
 
@@ -1192,32 +1140,270 @@ function renderOwnerAttendance(){
     const tr =
       document.createElement("tr");
 
-    let editButton = "";
+    const nameCell =
+      document.createElement("td");
 
-    /*
-      Owner can edit any attendance record.
-      This includes Declined records.
-    */
+    nameCell.textContent =
+      row.name;
 
-    editButton = `
-      <button
-        class="primary"
-        onclick="openEditModal('${escapeQuotes(row.name)}','${escapeQuotes(row.date)}')">
-        Edit
-      </button>
-    `;
+    const dateCell =
+      document.createElement("td");
 
-    tr.innerHTML = `
-      <td>${escapeHtml(row.name)}</td>
-      <td>${escapeHtml(row.date)}</td>
-      <td>${escapeHtml(row.inTime || "-")}</td>
-      <td>${escapeHtml(row.outTime || "-")}</td>
-      <td>${escapeHtml(row.hoursWorked || "-")}</td>
-      <td>${escapeHtml(row.otHours || "-")}</td>
-      <td>${statusBadge(row.status)}</td>
+    dateCell.textContent =
+      row.date;
 
-      <td class="actions">
+    const inCell =
+      document.createElement("td");
 
-        <button
-          class="success"
-          onclick="changeStatus('${e
+    inCell.textContent =
+      row.inTime || "-";
+
+    const outCell =
+      document.createElement("td");
+
+    outCell.textContent =
+      row.outTime || "-";
+
+    const hoursCell =
+      document.createElement("td");
+
+    hoursCell.textContent =
+      row.hoursWorked || "-";
+
+    const otCell =
+      document.createElement("td");
+
+    otCell.textContent =
+      row.otHours || "-";
+
+    const statusCell =
+      document.createElement("td");
+
+    statusCell.innerHTML =
+      statusBadge(row.status);
+
+    const actionCell =
+      document.createElement("td");
+
+    actionCell.className =
+      "actions";
+
+
+    const acceptBtn =
+      document.createElement("button");
+
+    acceptBtn.className =
+      "success";
+
+    acceptBtn.textContent =
+      "Accept";
+
+    acceptBtn.onclick =
+      function(){
+
+        changeStatus(
+          row.name,
+          row.date,
+          "Approved"
+        );
+
+      };
+
+
+    const declineBtn =
+      document.createElement("button");
+
+    declineBtn.className =
+      "danger";
+
+    declineBtn.textContent =
+      "Decline";
+
+    declineBtn.onclick =
+      function(){
+
+        changeStatus(
+          row.name,
+          row.date,
+          "Declined"
+        );
+
+      };
+
+
+    actionCell.appendChild(acceptBtn);
+
+    actionCell.appendChild(declineBtn);
+
+
+    tr.appendChild(nameCell);
+
+    tr.appendChild(dateCell);
+
+    tr.appendChild(inCell);
+
+    tr.appendChild(outCell);
+
+    tr.appendChild(hoursCell);
+
+    tr.appendChild(otCell);
+
+    tr.appendChild(statusCell);
+
+    tr.appendChild(actionCell);
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+/* CHANGE STATUS */
+
+async function changeStatus(name,date,status){
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"updateStatus",
+          name:name,
+          date:date,
+          status:status
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      await loadData();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      alert(data.message);
+
+    }
+
+  }catch(error){
+
+    alert(
+      "Could not update status."
+    );
+
+  }
+
+}
+
+
+/* STATUS BADGE */
+
+function statusBadge(status){
+
+  const s =
+    String(status || "Pending")
+      .toLowerCase();
+
+  let cls =
+    "pending";
+
+  if(s === "approved"){
+    cls = "approved";
+  }
+
+  if(s === "declined"){
+    cls = "declined";
+  }
+
+  return (
+    '<span class="status ' +
+    cls +
+    '">' +
+    (status || "Pending") +
+    '</span>'
+  );
+
+}
+
+
+/* LOGOUT */
+
+function logout(){
+
+  currentEmployee = "";
+
+  document
+    .getElementById("employeeScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("loginScreen")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("logoutBtn")
+    .classList.add("hidden");
+
+  backToLogin();
+
+}
+
+
+/* MESSAGES */
+
+function showLoginMessage(text){
+
+  document
+    .getElementById("loginMessage")
+    .innerHTML =
+    '<div class="message">' +
+    text +
+    '</div>';
+
+}
+
+
+function showEmployeeMessage(text){
+
+  document
+    .getElementById("employeeMessage")
+    .innerHTML =
+    '<div class="message">' +
+    text +
+    '</div>';
+
+}
+
+
+/* START */
+
+loadData();
+
+</script>
+
+
+<script>
+
+/* SERVICE WORKER */
+
+if("serviceWorker" in navigator){
+
+  navigator.serviceWorker.register("./sw.js");
+
+}
+
+</script>
+
+</body>
+</html>

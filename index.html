@@ -214,18 +214,27 @@ th{
     <button class="secondary" onclick="backToLogin()">Back</button>
   </div>
 
-  <!-- OWNER LOGIN -->
-  <div id="ownerLogin" class="hidden">
-    <h2>Owner Login</h2>
+ <!-- OWNER LOGIN -->
+<div id="ownerLogin" class="hidden">
+  <h2>Owner Login</h2>
 
-    <label>Owner Password</label>
-    <input id="ownerPassword" type="password" placeholder="Enter password">
+  <label>Owner</label>
+  <select id="ownerName">
+    <option value="">Select Owner</option>
+    <option value="NAVIN">NAVIN</option>
+    <option value="VARSHA">VARSHA</option>
+  </select>
 
-    <button class="primary" onclick="ownerLogin()">Login</button>
-    <button class="secondary" onclick="backToLogin()">Back</button>
-  </div>
+  <label>Owner PIN</label>
+  <input
+    id="ownerPin"
+    type="password"
+    inputmode="numeric"
+    maxlength="4"
+    placeholder="Enter PIN">
 
-  <div id="loginMessage"></div>
+  <button class="primary" onclick="ownerLogin()">Login</button>
+  <button class="secondary" onclick="backToLogin()">Back</button>
 </div>
 
 
@@ -533,16 +542,17 @@ async function employeeLogin(){
    OWNER LOGIN
 ----------------------------- */
 
-async function ownerLogin(){
+  async function ownerLogin(){
 
-  const password =
-    document.getElementById("ownerPassword").value;
+  const ownerName =
+    document.getElementById("ownerName").value;
 
-  if(!password){
+  const pin =
+    document.getElementById("ownerPin").value;
 
-    showLoginMessage(
-      "Please enter owner password."
-    );
+  if(!ownerName || !pin){
+
+    showLoginMessage("Please select owner and enter PIN.");
 
     return;
 
@@ -557,7 +567,8 @@ async function ownerLogin(){
         method:"POST",
         body:JSON.stringify({
           action:"ownerLogin",
-          password:password
+          ownerName:ownerName,
+          pin:pin
         })
       });
 
@@ -576,11 +587,11 @@ async function ownerLogin(){
 
   }catch(error){
 
-    showLoginMessage(
-      "Login failed. Please try again."
-    );
+    showLoginMessage("Login failed. Please try again.");
 
   }
+
+}
 
 }
 

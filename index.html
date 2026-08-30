@@ -318,65 +318,11 @@ th{
 <div id="ownerSettings" class="card hidden">
   <h2>⚙️ Owner Settings</h2>
 
- <p>Manage your owner account settings.</p>
+  <p>Manage your owner account settings.</p>
 
-<h3>NAVIN</h3>
-
-<label>Current PIN</label>
-<input
-  type="password"
-  id="navinCurrentPin"
-  inputmode="numeric"
-  maxlength="4"
-  placeholder="Enter current PIN">
-
-<label>New PIN</label>
-<input
-  type="password"
-  id="navinNewPin"
-  inputmode="numeric"
-  maxlength="4"
-  placeholder="Enter new 4 digit PIN">
-
-<button
-  class="primary"
-  onclick="changeOwnerPin('NAVIN')">
-  Change NAVIN PIN
-</button>
-
-<hr style="margin:25px 0;">
-
-<h3>VARSHA</h3>
-
-<label>Current PIN</label>
-<input
-  type="password"
-  id="varshaCurrentPin"
-  inputmode="numeric"
-  maxlength="4"
-  placeholder="Enter current PIN">
-
-<label>New PIN</label>
-<input
-  type="password"
-  id="varshaNewPin"
-  inputmode="numeric"
-  maxlength="4"
-  placeholder="Enter new 4 digit PIN">
-
-<button
-  class="primary"
-  onclick="changeOwnerPin('VARSHA')">
-  Change VARSHA PIN
-</button>
-
-<div id="pinMessage"></div>
-
-<br>
-
-<button class="secondary" onclick="closeOwnerSettings()">
-  Back
-</button>
+  <button class="secondary" onclick="closeOwnerSettings()">
+    Back
+  </button>
 </div>
 
   <div class="card">
@@ -405,7 +351,12 @@ th{
 </div>
 
 </div>
-</script>
+<script>
+function openOwnerSettings(){
+  document.getElementById("ownerSettings")
+    .classList.remove("hidden");
+}
+
 function closeOwnerSettings(){
   document.getElementById("ownerSettings")
     .classList.add("hidden");

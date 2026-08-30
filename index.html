@@ -983,6 +983,18 @@ function escapeQuotes(text){
 loadData();
 
 </script>
+<script>
+function checkIn() {
+  const now = new Date();
+  document.getElementById("inTime").value =
+    now.toTimeString().slice(0, 5);
+}
 
+function checkOut() {
+  const now = new Date();
+  document.getElementById("outTime").value =
+    now.toTimeString().slice(0, 5);
+}
+</script>
 </body>
 </html>

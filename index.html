@@ -318,11 +318,65 @@ th{
 <div id="ownerSettings" class="card hidden">
   <h2>⚙️ Owner Settings</h2>
 
-  <p>Manage your owner account settings.</p>
+ <p>Manage your owner account settings.</p>
 
-  <button class="secondary" onclick="closeOwnerSettings()">
-    Back
-  </button>
+<h3>NAVIN</h3>
+
+<label>Current PIN</label>
+<input
+  type="password"
+  id="navinCurrentPin"
+  inputmode="numeric"
+  maxlength="4"
+  placeholder="Enter current PIN">
+
+<label>New PIN</label>
+<input
+  type="password"
+  id="navinNewPin"
+  inputmode="numeric"
+  maxlength="4"
+  placeholder="Enter new 4 digit PIN">
+
+<button
+  class="primary"
+  onclick="changeOwnerPin('NAVIN')">
+  Change NAVIN PIN
+</button>
+
+<hr style="margin:25px 0;">
+
+<h3>VARSHA</h3>
+
+<label>Current PIN</label>
+<input
+  type="password"
+  id="varshaCurrentPin"
+  inputmode="numeric"
+  maxlength="4"
+  placeholder="Enter current PIN">
+
+<label>New PIN</label>
+<input
+  type="password"
+  id="varshaNewPin"
+  inputmode="numeric"
+  maxlength="4"
+  placeholder="Enter new 4 digit PIN">
+
+<button
+  class="primary"
+  onclick="changeOwnerPin('VARSHA')">
+  Change VARSHA PIN
+</button>
+
+<div id="pinMessage"></div>
+
+<br>
+
+<button class="secondary" onclick="closeOwnerSettings()">
+  Back
+</button>
 </div>
 
   <div class="card">
@@ -355,6 +409,54 @@ th{
 function closeOwnerSettings(){
   document.getElementById("ownerSettings")
     .classList.add("hidden");
+}
+  async function changeOwnerPin(ownerName){
+
+  const currentPin = document.getElementById(
+    ownerName === "NAVIN"
+      ? "navinCurrentPin"
+      : "varshaCurrentPin"
+  ).value;
+
+  const newPin = document.getElementById(
+    ownerName === "NAVIN"
+      ? "navinNewPin"
+      : "varshaNewPin"
+  ).value;
+
+  if(!/^\d{4}$/.test(newPin)){
+    document.getElementById("pinMessage").innerHTML =
+      '<div class="message">New PIN must be exactly 4 digits.</div>';
+    return;
+  }
+
+  try{
+
+    const response = await fetch(API_URL,{
+      method:"POST",
+      body:JSON.stringify({
+        action:"setOwnerPin",
+        ownerName:ownerName,
+        currentPin:currentPin,
+        newPin:newPin
+      })
+    });
+
+    const data = await response.json();
+
+    document.getElementById("pinMessage").innerHTML =
+      '<div class="message">' +
+      (data.success
+        ? "PIN changed successfully."
+        : data.message) +
+      '</div>';
+
+  }catch(error){
+
+    document.getElementById("pinMessage").innerHTML =
+      '<div class="message">Could not change PIN.</div>';
+
+  }
 }
 </script>
   

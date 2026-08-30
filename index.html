@@ -504,6 +504,36 @@ th{
   >
     Change PIN
   </button>
+  <hr style="margin:25px 0;border:0;border-top:1px solid #e3e7ed;">
+
+<h3>👤 Add Employee</h3>
+
+<label>Employee Name</label>
+
+<input
+  type="text"
+  id="newEmployeeName"
+  placeholder="Enter employee name"
+>
+
+<label>4 Digit PIN</label>
+
+<input
+  type="password"
+  id="newEmployeePin"
+  inputmode="numeric"
+  maxlength="4"
+  placeholder="Enter 4 digit PIN"
+>
+
+<button
+  class="primary"
+  onclick="addEmployee()"
+>
+  Add Employee
+</button>
+
+<div id="addEmployeeMessage"></div>
 
   <button
     class="secondary"
@@ -607,7 +637,79 @@ function closeOwnerSettings(){
 
     return;
   }
+async function addEmployee(){
 
+  const name =
+    document.getElementById("newEmployeeName").value.trim();
+
+  const pin =
+    document.getElementById("newEmployeePin").value.trim();
+
+  const message =
+    document.getElementById("addEmployeeMessage");
+
+  if(!name || !pin){
+
+    message.innerHTML =
+      '<div class="message">Please enter employee name and PIN.</div>';
+
+    return;
+  }
+
+  if(!/^\d{4}$/.test(pin)){
+
+    message.innerHTML =
+      '<div class="message">PIN must be exactly 4 digits.</div>';
+
+    return;
+  }
+
+  message.innerHTML =
+    '<div class="message">Adding employee...</div>';
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"addEmployee",
+          name:name,
+          pin:pin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      message.innerHTML =
+        '<div class="message">Employee added successfully.</div>';
+
+      document.getElementById("newEmployeeName").value = "";
+      document.getElementById("newEmployeePin").value = "";
+
+      await loadData();
+
+    }else{
+
+      message.innerHTML =
+        '<div class="message">' +
+        data.message +
+        '</div>';
+
+    }
+
+  }catch(error){
+
+    message.innerHTML =
+      '<div class="message">Could not add employee. Please try again.</div>';
+
+  }
+
+}
   if(!/^\d{4}$/.test(newPin)){
 
     message.innerHTML =

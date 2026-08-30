@@ -245,12 +245,12 @@ th{
 
       <div>
         <label>In Time</label>
-        <input type="time" id="inTime" readonly disabled>
+        <input type="time" id="inTime" readonly disabled onkeydown="return false;" onpaste="return false;" oninput="this.value=this.value;">
       </div>
 
       <div>
         <label>Out Time</label>
-        <input type="time" id="outTime" readonly disabled>
+        <input type="time" id="outTime" readonly disabled onkeydown="return false;" onpaste="return false;" oninput="this.value=this.value;">
       </div>
 <div style="display:flex;gap:10px;margin:15px 0;">
   <button type="button" id="checkInBtn" onclick="checkIn()">Check In</button>

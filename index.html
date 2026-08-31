@@ -40,6 +40,14 @@ header h2{margin:0}
   box-shadow:0 3px 15px rgba(0,0,0,.08);
 }
 
+.subcard{
+  background:white;
+  padding:16px;
+  border-radius:12px;
+  border:1px solid #e3e7ed;
+  margin-top:16px;
+}
+
 input,select{
   width:100%;
   padding:11px;
@@ -144,6 +152,11 @@ th{
   color:#c0311a;
 }
 
+.editing{
+  background:#fef3c7;
+  color:#92400e;
+}
+
 .actions{
   display:flex;
   gap:6px;
@@ -164,6 +177,22 @@ th{
   display:grid;
   grid-template-columns:repeat(2,1fr);
   gap:12px;
+}
+
+.cell-input{
+  margin:0;
+  padding:6px 8px;
+  font-size:13px;
+  min-width:110px;
+}
+
+.limit-msg{
+  padding:10px;
+  border-radius:8px;
+  margin-bottom:10px;
+  background:#fde5e1;
+  color:#c0311a;
+  font-weight:bold;
 }
 
 @media(max-width:600px){
@@ -470,8 +499,79 @@ th{
 
     <p>Manage your owner account settings.</p>
 
+    <div class="subcard">
+
+      <h3>Employee Management</h3>
+
+      <p>Add, edit, or remove employees. Maximum 10 employees allowed.</p>
+
+      <div id="employeeLimitMessage"></div>
+
+      <div class="grid">
+
+        <div>
+
+          <label>Employee Name</label>
+
+          <input
+            type="text"
+            id="newEmployeeName"
+            placeholder="Enter employee name"
+          >
+
+        </div>
+
+
+        <div>
+
+          <label>4 Digit PIN</label>
+
+          <input
+            type="password"
+            id="newEmployeePin"
+            inputmode="numeric"
+            maxlength="4"
+            placeholder="Enter PIN"
+          >
+
+        </div>
+
+      </div>
+
+      <button
+        class="success"
+        id="addEmployeeBtn"
+        onclick="addEmployeeFromSettings()"
+      >
+        Add Employee
+      </button>
+
+      <div id="employeeSettingsMessage"></div>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Employee Name</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="employeeSettingsTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
     <button
       class="secondary"
+      style="margin-top:16px;"
       onclick="closeOwnerSettings()"
     >
       Back
@@ -483,6 +583,11 @@ th{
   <div class="card">
 
     <h2>Attendance Records</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      Tip: if a record needs a correction, tap <b>Decline</b> to edit the
+      Date, Check-In and Check-Out times, then tap <b>Save &amp; Approve</b>.
+    </p>
 
     <div class="table-wrap">
 
@@ -522,12 +627,22 @@ const API_URL =
 "https://script.google.com/macros/s/AKfycbwI6r_c9iCSHHBpxPSpG1_zaDx7PeuJeJHS7U90hhb_l_e7rWJGgR_dtmhOY4uC1RQD/exec";
 
 
+const MAX_EMPLOYEES = 10;
+
 let allData = {
   employees: [],
   attendance: []
 };
 
 let currentEmployee = "";
+
+/* Tracks which owner-table record (if any) is currently being
+   corrected after a Decline tap: { name, date } or null. */
+let editingRecord = null;
+
+/* Tracks which employee row (by current name) is being edited in
+   Owner Settings, or null. */
+let editingEmployee = null;
 
 
 /* OWNER SETTINGS */
@@ -538,6 +653,10 @@ function openOwnerSettings(){
     .getElementById("ownerSettings")
     .classList.remove("hidden");
 
+  editingEmployee = null;
+
+  renderEmployeeSettingsList();
+
 }
 
 
@@ -546,6 +665,8 @@ function closeOwnerSettings(){
   document
     .getElementById("ownerSettings")
     .classList.add("hidden");
+
+  editingEmployee = null;
 
 }
 
@@ -579,7 +700,7 @@ async function loadData(){
 }
 
 
-/* EMPLOYEE LIST */
+/* EMPLOYEE LIST (login dropdown) */
 
 function fillEmployeeList(){
 
@@ -898,6 +1019,8 @@ function openOwnerScreen(){
     .getElementById("logoutBtn")
     .classList.remove("hidden");
 
+  editingRecord = null;
+
   renderOwnerAttendance();
 
 }
@@ -1106,29 +1229,9 @@ async function checkOut(){
 }
 
 
-/* CALCULATE HOURS */
+/* HOURS / OT CALCULATION (shared logic) */
 
-function calculateHours(){
-
-  const inTime =
-    document.getElementById("inTime").value;
-
-  const outTime =
-    document.getElementById("outTime").value;
-
-  if(!inTime || !outTime){
-
-    document
-      .getElementById("hoursWorked")
-      .value = "";
-
-    document
-      .getElementById("otHours")
-      .value = "";
-
-    return;
-
-  }
+function computeHours(inTime,outTime){
 
   const inParts =
     inTime.split(":").map(Number);
@@ -1157,15 +1260,50 @@ function calculateHours(){
   const ot =
     Math.max(0,totalHours - 10);
 
+  return {
+    hoursWorked: totalHours.toFixed(2),
+    otHours: ot.toFixed(2)
+  };
+
+}
+
+
+/* CALCULATE HOURS (employee check-in/out screen) */
+
+function calculateHours(){
+
+  const inTime =
+    document.getElementById("inTime").value;
+
+  const outTime =
+    document.getElementById("outTime").value;
+
+  if(!inTime || !outTime){
+
+    document
+      .getElementById("hoursWorked")
+      .value = "";
+
+    document
+      .getElementById("otHours")
+      .value = "";
+
+    return;
+
+  }
+
+  const result =
+    computeHours(inTime,outTime);
+
   document
     .getElementById("hoursWorked")
     .value =
-    totalHours.toFixed(2);
+    result.hoursWorked;
 
   document
     .getElementById("otHours")
     .value =
-    ot.toFixed(2);
+    result.otHours;
 
 }
 
@@ -1354,6 +1492,11 @@ function renderOwnerAttendance(){
 
   records.forEach(function(row){
 
+    const isEditing =
+      !!editingRecord &&
+      editingRecord.name === row.name &&
+      editingRecord.date === row.date;
+
     const tr =
       document.createElement("tr");
 
@@ -1366,20 +1509,11 @@ function renderOwnerAttendance(){
     const dateCell =
       document.createElement("td");
 
-    dateCell.textContent =
-      row.date;
-
     const inCell =
       document.createElement("td");
 
-    inCell.textContent =
-      row.inTime || "-";
-
     const outCell =
       document.createElement("td");
-
-    outCell.textContent =
-      row.outTime || "-";
 
     const hoursCell =
       document.createElement("td");
@@ -1396,9 +1530,6 @@ function renderOwnerAttendance(){
     const statusCell =
       document.createElement("td");
 
-    statusCell.innerHTML =
-      statusBadge(row.status);
-
     const actionCell =
       document.createElement("td");
 
@@ -1406,51 +1537,150 @@ function renderOwnerAttendance(){
       "actions";
 
 
-    const acceptBtn =
-      document.createElement("button");
+    if(isEditing){
 
-    acceptBtn.className =
-      "success";
+      /* Editable Date / In Time / Out Time for the "Decline -> correct" flow */
 
-    acceptBtn.textContent =
-      "Accept";
+      const dateInput =
+        document.createElement("input");
 
-    acceptBtn.onclick =
-      function(){
+      dateInput.type = "date";
+      dateInput.id = "editDateInput";
+      dateInput.className = "cell-input";
+      dateInput.value = row.date;
 
-        changeStatus(
-          row.name,
-          row.date,
-          "Approved"
-        );
-
-      };
+      dateCell.appendChild(dateInput);
 
 
-    const declineBtn =
-      document.createElement("button");
+      const inInput =
+        document.createElement("input");
 
-    declineBtn.className =
-      "danger";
+      inInput.type = "time";
+      inInput.id = "editInTimeInput";
+      inInput.className = "cell-input";
+      inInput.value = row.inTime || "";
 
-    declineBtn.textContent =
-      "Decline";
-
-    declineBtn.onclick =
-      function(){
-
-        changeStatus(
-          row.name,
-          row.date,
-          "Declined"
-        );
-
-      };
+      inCell.appendChild(inInput);
 
 
-    actionCell.appendChild(acceptBtn);
+      const outInput =
+        document.createElement("input");
 
-    actionCell.appendChild(declineBtn);
+      outInput.type = "time";
+      outInput.id = "editOutTimeInput";
+      outInput.className = "cell-input";
+      outInput.value = row.outTime || "";
+
+      outCell.appendChild(outInput);
+
+
+      statusCell.innerHTML =
+        '<span class="status editing">Editing</span>';
+
+
+      const saveBtn =
+        document.createElement("button");
+
+      saveBtn.className = "success";
+      saveBtn.textContent = "Save & Approve";
+
+      saveBtn.onclick =
+        function(){
+
+          saveCorrectedAttendance(
+            row.name,
+            row.date
+          );
+
+        };
+
+
+      const cancelBtn =
+        document.createElement("button");
+
+      cancelBtn.className = "secondary";
+      cancelBtn.textContent = "Cancel";
+
+      cancelBtn.onclick =
+        function(){
+
+          editingRecord = null;
+
+          renderOwnerAttendance();
+
+        };
+
+
+      actionCell.appendChild(saveBtn);
+
+      actionCell.appendChild(cancelBtn);
+
+    }else{
+
+      dateCell.textContent = row.date;
+
+      inCell.textContent = row.inTime || "-";
+
+      outCell.textContent = row.outTime || "-";
+
+      statusCell.innerHTML =
+        statusBadge(row.status);
+
+
+      const acceptBtn =
+        document.createElement("button");
+
+      acceptBtn.className =
+        "success";
+
+      acceptBtn.textContent =
+        "Accept";
+
+      acceptBtn.onclick =
+        function(){
+
+          changeStatus(
+            row.name,
+            row.date,
+            "Approved"
+          );
+
+        };
+
+
+      const declineBtn =
+        document.createElement("button");
+
+      declineBtn.className =
+        "danger";
+
+      declineBtn.textContent =
+        "Decline";
+
+      declineBtn.title =
+        "Correct the Date / Check-In / Check-Out and approve";
+
+      declineBtn.onclick =
+        function(){
+
+          /* Instead of rejecting the record, open it up for correction.
+             Nothing is written to the sheet until "Save & Approve". */
+
+          editingRecord = {
+            name: row.name,
+            date: row.date
+          };
+
+          renderOwnerAttendance();
+
+        };
+
+
+      actionCell.appendChild(acceptBtn);
+
+      actionCell.appendChild(declineBtn);
+
+    }
 
 
     tr.appendChild(nameCell);
@@ -1476,7 +1706,7 @@ function renderOwnerAttendance(){
 }
 
 
-/* CHANGE STATUS */
+/* CHANGE STATUS (plain Accept, no edits needed) */
 
 async function changeStatus(name,date,status){
 
@@ -1520,6 +1750,489 @@ async function changeStatus(name,date,status){
 }
 
 
+/* SAVE CORRECTED ATTENDANCE (Decline -> edit -> Save & Approve) */
+
+async function saveCorrectedAttendance(name,originalDate){
+
+  const newDate =
+    document.getElementById("editDateInput").value;
+
+  const inTime =
+    document.getElementById("editInTimeInput").value;
+
+  const outTime =
+    document.getElementById("editOutTimeInput").value;
+
+  if(!newDate || !inTime || !outTime){
+
+    alert(
+      "Please fill Date, In Time and Out Time."
+    );
+
+    return;
+
+  }
+
+  const hours =
+    computeHours(inTime,outTime);
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"correctAttendance",
+          name:name,
+          originalDate:originalDate,
+          date:newDate,
+          inTime:inTime,
+          outTime:outTime,
+          hoursWorked:hours.hoursWorked,
+          otHours:hours.otHours,
+          status:"Approved"
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      editingRecord = null;
+
+      await loadData();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      alert(
+        data.message || "Could not save correction."
+      );
+
+    }
+
+  }catch(error){
+
+    alert(
+      "Could not save correction. Please check your connection."
+    );
+
+  }
+
+}
+
+
+/* ================= EMPLOYEE MANAGEMENT (Owner Settings) ================= */
+
+function renderEmployeeSettingsList(){
+
+  const tbody =
+    document.getElementById("employeeSettingsTable");
+
+  tbody.innerHTML = "";
+
+  if(allData.employees.length === 0){
+
+    tbody.innerHTML =
+      "<tr><td colspan='2'>No employees added yet.</td></tr>";
+
+  }else{
+
+    allData.employees.forEach(function(name){
+
+      const isEditing =
+        editingEmployee === name;
+
+      const tr =
+        document.createElement("tr");
+
+      const nameCell =
+        document.createElement("td");
+
+      const actionCell =
+        document.createElement("td");
+
+      actionCell.className =
+        "actions";
+
+
+      if(isEditing){
+
+        const nameInput =
+          document.createElement("input");
+
+        nameInput.type = "text";
+        nameInput.id = "editEmpNameInput";
+        nameInput.className = "cell-input";
+        nameInput.value = name;
+
+        const pinInput =
+          document.createElement("input");
+
+        pinInput.type = "password";
+        pinInput.id = "editEmpPinInput";
+        pinInput.className = "cell-input";
+        pinInput.inputMode = "numeric";
+        pinInput.maxLength = 4;
+        pinInput.placeholder = "New PIN (optional)";
+
+        nameCell.appendChild(nameInput);
+
+        nameCell.appendChild(pinInput);
+
+
+        const saveBtn =
+          document.createElement("button");
+
+        saveBtn.className = "success";
+        saveBtn.textContent = "Save";
+
+        saveBtn.onclick =
+          function(){
+
+            saveEmployeeEdit(name);
+
+          };
+
+
+        const cancelBtn =
+          document.createElement("button");
+
+        cancelBtn.className = "secondary";
+        cancelBtn.textContent = "Cancel";
+
+        cancelBtn.onclick =
+          function(){
+
+            editingEmployee = null;
+
+            renderEmployeeSettingsList();
+
+          };
+
+
+        actionCell.appendChild(saveBtn);
+
+        actionCell.appendChild(cancelBtn);
+
+      }else{
+
+        nameCell.textContent = name;
+
+
+        const editBtn =
+          document.createElement("button");
+
+        editBtn.className = "secondary";
+        editBtn.textContent = "Edit";
+
+        editBtn.onclick =
+          function(){
+
+            editingEmployee = name;
+
+            renderEmployeeSettingsList();
+
+          };
+
+
+        const deleteBtn =
+          document.createElement("button");
+
+        deleteBtn.className = "danger";
+        deleteBtn.textContent = "Remove";
+
+        deleteBtn.onclick =
+          function(){
+
+            deleteEmployeeFromSettings(name);
+
+          };
+
+
+        actionCell.appendChild(editBtn);
+
+        actionCell.appendChild(deleteBtn);
+
+      }
+
+
+      tr.appendChild(nameCell);
+
+      tr.appendChild(actionCell);
+
+      tbody.appendChild(tr);
+
+    });
+
+  }
+
+  updateEmployeeLimitUI();
+
+}
+
+
+function updateEmployeeLimitUI(){
+
+  const limitDiv =
+    document.getElementById("employeeLimitMessage");
+
+  const addBtn =
+    document.getElementById("addEmployeeBtn");
+
+  if(allData.employees.length >= MAX_EMPLOYEES){
+
+    limitDiv.innerHTML =
+      '<div class="limit-msg">Maximum 10 employees allowed.</div>';
+
+    addBtn.disabled = true;
+
+  }else{
+
+    limitDiv.innerHTML = "";
+
+    addBtn.disabled = false;
+
+  }
+
+}
+
+
+async function addEmployeeFromSettings(){
+
+  const nameField =
+    document.getElementById("newEmployeeName");
+
+  const pinField =
+    document.getElementById("newEmployeePin");
+
+  const name =
+    nameField.value.trim();
+
+  const pin =
+    pinField.value.trim();
+
+  if(allData.employees.length >= MAX_EMPLOYEES){
+
+    showEmployeeSettingsMessage(
+      "Maximum 10 employees allowed."
+    );
+
+    return;
+
+  }
+
+  if(!name || !pin){
+
+    showEmployeeSettingsMessage(
+      "Please enter employee name and PIN."
+    );
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(pin)){
+
+    showEmployeeSettingsMessage(
+      "PIN must be exactly 4 digits."
+    );
+
+    return;
+
+  }
+
+  showEmployeeSettingsMessage("Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"addEmployee",
+          name:name,
+          pin:pin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      nameField.value = "";
+
+      pinField.value = "";
+
+      showEmployeeSettingsMessage(
+        "Employee added successfully."
+      );
+
+      await loadData();
+
+      renderEmployeeSettingsList();
+
+    }else{
+
+      showEmployeeSettingsMessage(
+        data.message || "Could not add employee."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmployeeSettingsMessage(
+      "Could not add employee. Please check your connection."
+    );
+
+  }
+
+}
+
+
+async function saveEmployeeEdit(oldName){
+
+  const newName =
+    document.getElementById("editEmpNameInput").value.trim();
+
+  const newPin =
+    document.getElementById("editEmpPinInput").value.trim();
+
+  if(!newName){
+
+    showEmployeeSettingsMessage(
+      "Employee name is required."
+    );
+
+    return;
+
+  }
+
+  if(newPin && !/^\d{4}$/.test(newPin)){
+
+    showEmployeeSettingsMessage(
+      "PIN must be exactly 4 digits."
+    );
+
+    return;
+
+  }
+
+  showEmployeeSettingsMessage("Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"editEmployee",
+          oldName:oldName,
+          newName:newName,
+          newPin:newPin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      editingEmployee = null;
+
+      showEmployeeSettingsMessage(
+        "Employee updated successfully."
+      );
+
+      await loadData();
+
+      renderEmployeeSettingsList();
+
+    }else{
+
+      showEmployeeSettingsMessage(
+        data.message || "Could not update employee."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmployeeSettingsMessage(
+      "Could not update employee. Please check your connection."
+    );
+
+  }
+
+}
+
+
+async function deleteEmployeeFromSettings(name){
+
+  const confirmed =
+    confirm(
+      "Remove " + name + "? This cannot be undone."
+    );
+
+  if(!confirmed){
+
+    return;
+
+  }
+
+  showEmployeeSettingsMessage("Removing...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"deleteEmployee",
+          name:name
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showEmployeeSettingsMessage(
+        "Employee removed."
+      );
+
+      await loadData();
+
+      renderEmployeeSettingsList();
+
+    }else{
+
+      showEmployeeSettingsMessage(
+        data.message || "Could not remove employee."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmployeeSettingsMessage(
+      "Could not remove employee. Please check your connection."
+    );
+
+  }
+
+}
+
+
 /* STATUS BADGE */
 
 function statusBadge(status){
@@ -1555,6 +2268,10 @@ function statusBadge(status){
 function logout(){
 
   currentEmployee = "";
+
+  editingRecord = null;
+
+  editingEmployee = null;
 
   document
     .getElementById("employeeScreen")
@@ -1595,6 +2312,18 @@ function showEmployeeMessage(text){
 
   document
     .getElementById("employeeMessage")
+    .innerHTML =
+    '<div class="message">' +
+    text +
+    '</div>';
+
+}
+
+
+function showEmployeeSettingsMessage(text){
+
+  document
+    .getElementById("employeeSettingsMessage")
     .innerHTML =
     '<div class="message">' +
     text +

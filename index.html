@@ -605,6 +605,19 @@ function fillEmployeeList(){
 }
 
 
+/* FIND ACTIVE (UNFINISHED) CHECK-IN RECORD FOR AN EMPLOYEE */
+
+function findOpenRecord(name){
+
+  return allData.attendance.find(function(row){
+
+    return row.name === name && row.status === "Open";
+
+  });
+
+}
+
+
 /* LOGIN SCREENS */
 
 function showEmployeeLogin(){
@@ -795,16 +808,76 @@ function openEmployeeScreen(){
     .textContent =
     "Welcome, " + currentEmployee;
 
-  const today =
-    new Date().toISOString().split("T")[0];
+  const openRecord =
+    findOpenRecord(currentEmployee);
+
+  if(openRecord){
+
+    restoreOpenRecord(openRecord);
+
+  }else{
+
+    const today =
+      new Date().toISOString().split("T")[0];
+
+    document
+      .getElementById("attDate")
+      .value = today;
+
+    resetTimeEntry();
+
+  }
+
+  renderEmployeeAttendance();
+
+}
+
+
+/* RESTORE AN UNFINISHED CHECK-IN AFTER LOGIN/REFRESH */
+
+function restoreOpenRecord(record){
 
   document
     .getElementById("attDate")
-    .value = today;
+    .value = record.date || "";
 
-  resetTimeEntry();
+  document
+    .getElementById("inTime")
+    .value = record.inTime || "";
 
-  renderEmployeeAttendance();
+  document
+    .getElementById("outTime")
+    .value = record.outTime || "";
+
+  document
+    .getElementById("checkInBtn")
+    .disabled = !!record.inTime;
+
+  document
+    .getElementById("checkOutBtn")
+    .disabled = !!record.outTime;
+
+  calculateHours();
+
+  if(record.outTime){
+
+    showEmployeeMessage(
+      "You already checked in and out for " +
+      record.date +
+      ". Tap Submit Attendance to send it for approval."
+    );
+
+  }else{
+
+    showEmployeeMessage(
+      "You're still checked in since " +
+      record.inTime +
+      " on " +
+      record.date +
+      ". Tap Check Out when you're done."
+    );
+
+  }
 
 }
 
@@ -832,7 +905,7 @@ function openOwnerScreen(){
 
 /* CHECK IN */
 
-function checkIn(){
+async function checkIn(){
 
   const field =
     document.getElementById("inTime");
@@ -852,8 +925,11 @@ function checkIn(){
   const mm =
     String(now.getMinutes()).padStart(2,"0");
 
-  field.value =
+  const timeValue =
     hh + ":" + mm;
+
+  field.value =
+    timeValue;
 
   document
     .getElementById("checkInBtn")
@@ -861,17 +937,96 @@ function checkIn(){
 
   calculateHours();
 
+  const date =
+    document.getElementById("attDate").value;
+
+  showEmployeeMessage("Saving check-in...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"checkIn",
+          name:currentEmployee,
+          date:date,
+          inTime:timeValue
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      if(data.date){
+
+        document
+          .getElementById("attDate")
+          .value = data.date;
+
+      }
+
+      if(data.inTime){
+
+        document
+          .getElementById("inTime")
+          .value = data.inTime;
+
+        calculateHours();
+
+      }
+
+      showEmployeeMessage(
+        "Checked in at " +
+        (data.inTime || timeValue) +
+        ". This stays saved even if you refresh the page."
+      );
+
+      await loadData();
+
+    }else{
+
+      showEmployeeMessage(
+        data.message || "Could not save check-in. Please try again."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmployeeMessage(
+      "Could not save check-in. Please check your connection."
+    );
+
+  }
+
 }
 
 
 /* CHECK OUT */
 
-function checkOut(){
+async function checkOut(){
 
   const field =
     document.getElementById("outTime");
 
   if(field.value){
+
+    return;
+
+  }
+
+  const inTime =
+    document.getElementById("inTime").value;
+
+  if(!inTime){
+
+    showEmployeeMessage(
+      "Please check in first."
+    );
 
     return;
 
@@ -886,14 +1041,67 @@ function checkOut(){
   const mm =
     String(now.getMinutes()).padStart(2,"0");
 
-  field.value =
+  const timeValue =
     hh + ":" + mm;
+
+  field.value =
+    timeValue;
 
   document
     .getElementById("checkOutBtn")
     .disabled = true;
 
   calculateHours();
+
+  const hoursWorked =
+    document.getElementById("hoursWorked").value;
+
+  const otHours =
+    document.getElementById("otHours").value;
+
+  showEmployeeMessage("Saving check-out...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"checkOut",
+          name:currentEmployee,
+          outTime:timeValue,
+          hoursWorked:hoursWorked,
+          otHours:otHours
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showEmployeeMessage(
+        "Checked out. Tap Submit Attendance to send it for approval."
+      );
+
+      await loadData();
+
+    }else{
+
+      showEmployeeMessage(
+        data.message || "Could not save check-out. Please try again."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmployeeMessage(
+      "Could not save check-out. Please check your connection."
+    );
+
+  }
 
 }
 
@@ -1086,7 +1294,7 @@ function renderEmployeeAttendance(){
   const records =
     allData.attendance.filter(function(row){
 
-      return row.name === currentEmployee;
+      return row.name === currentEmployee && row.status !== "Open";
 
     });
 
@@ -1128,7 +1336,14 @@ function renderOwnerAttendance(){
 
   tbody.innerHTML = "";
 
-  if(allData.attendance.length === 0){
+  const records =
+    allData.attendance.filter(function(row){
+
+      return row.status !== "Open";
+
+    });
+
+  if(records.length === 0){
 
     tbody.innerHTML =
       "<tr><td colspan='8'>No attendance records.</td></tr>";
@@ -1137,7 +1352,7 @@ function renderOwnerAttendance(){
 
   }
 
-  allData.attendance.forEach(function(row){
+  records.forEach(function(row){
 
     const tr =
       document.createElement("tr");

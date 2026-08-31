@@ -186,20 +186,12 @@ th{
 
 <header>
   <h2>C7 Attendance</h2>
-
-  <button
-    id="logoutBtn"
-    class="secondary hidden"
-    onclick="logout()"
-  >
-    Logout
-  </button>
+  <button id="logoutBtn" class="secondary hidden" onclick="logout()">Logout</button>
 </header>
 
 <div class="container">
 
 <!-- LOGIN -->
-
 <div id="loginScreen" class="card">
 
   <h1>C7 Attendance</h1>
@@ -207,24 +199,17 @@ th{
 
   <div id="roleButtons" class="login-buttons">
 
-    <button
-      class="primary"
-      onclick="showEmployeeLogin()"
-    >
+    <button class="primary" onclick="showEmployeeLogin()">
       Employee Login
     </button>
 
-    <button
-      class="primary"
-      onclick="showOwnerLogin()"
-    >
+    <button class="primary" onclick="showOwnerLogin()">
       Owner Login
     </button>
 
   </div>
 
   <!-- EMPLOYEE LOGIN -->
-
   <div id="employeeLogin" class="hidden">
 
     <h2>Employee Login</h2>
@@ -245,24 +230,18 @@ th{
       placeholder="Enter PIN"
     >
 
-    <button
-      class="primary"
-      onclick="employeeLogin()"
-    >
+    <button class="primary" onclick="employeeLogin()">
       Login
     </button>
 
-    <button
-      class="secondary"
-      onclick="backToLogin()"
-    >
+    <button class="secondary" onclick="backToLogin()">
       Back
     </button>
 
   </div>
 
-  <!-- OWNER LOGIN -->
 
+  <!-- OWNER LOGIN -->
   <div id="ownerLogin" class="hidden">
 
     <h2>Owner Login</h2>
@@ -272,7 +251,9 @@ th{
     <select id="ownerName">
 
       <option value="">Select Owner</option>
+
       <option value="NAVIN">NAVIN</option>
+
       <option value="VARSHA">VARSHA</option>
 
     </select>
@@ -287,17 +268,11 @@ th{
       placeholder="Enter PIN"
     >
 
-    <button
-      class="primary"
-      onclick="ownerLogin()"
-    >
+    <button class="primary" onclick="ownerLogin()">
       Login
     </button>
 
-    <button
-      class="secondary"
-      onclick="backToLogin()"
-    >
+    <button class="secondary" onclick="backToLogin()">
       Back
     </button>
 
@@ -309,7 +284,6 @@ th{
 
 
 <!-- EMPLOYEE SCREEN -->
-
 <div id="employeeScreen" class="hidden">
 
   <div class="card">
@@ -331,6 +305,7 @@ th{
 
       </div>
 
+
       <div>
 
         <label>In Time</label>
@@ -343,6 +318,7 @@ th{
         >
 
       </div>
+
 
       <div>
 
@@ -358,6 +334,7 @@ th{
       </div>
 
     </div>
+
 
     <div style="display:flex;gap:10px;margin:15px 0;">
 
@@ -381,6 +358,7 @@ th{
 
     </div>
 
+
     <div class="grid">
 
       <div>
@@ -395,6 +373,7 @@ th{
 
       </div>
 
+
       <div>
 
         <label>Total OT Hours</label>
@@ -408,6 +387,7 @@ th{
       </div>
 
     </div>
+
 
     <button
       class="success"
@@ -454,7 +434,6 @@ th{
 
 
 <!-- OWNER SCREEN -->
-
 <div id="ownerScreen" class="hidden">
 
   <div class="card">
@@ -483,84 +462,11 @@ th{
 
 
   <!-- OWNER SETTINGS -->
-
   <div id="ownerSettings" class="card hidden">
 
     <h2>⚙️ Owner Settings</h2>
 
     <p>Manage your owner account settings.</p>
-
-    <h3>Change Owner PIN</h3>
-
-    <label>Current PIN</label>
-
-    <input
-      type="password"
-      id="currentOwnerPin"
-      inputmode="numeric"
-      maxlength="4"
-      placeholder="Current PIN"
-    >
-
-    <label>New PIN</label>
-
-    <input
-      type="password"
-      id="newOwnerPin"
-      inputmode="numeric"
-      maxlength="4"
-      placeholder="New 4 digit PIN"
-    >
-
-    <label>Confirm New PIN</label>
-
-    <input
-      type="password"
-      id="confirmOwnerPin"
-      inputmode="numeric"
-      maxlength="4"
-      placeholder="Confirm new PIN"
-    >
-
-    <button
-      class="success"
-      onclick="changeOwnerPin()"
-    >
-      Change PIN
-    </button>
-
-    <div id="ownerPinMessage"></div>
-
-    <hr style="margin:25px 0;border:0;border-top:1px solid #e3e7ed;">
-
-    <h3>👤 Add Employee</h3>
-
-    <label>Employee Name</label>
-
-    <input
-      type="text"
-      id="newEmployeeName"
-      placeholder="Enter employee name"
-    >
-
-    <label>4 Digit PIN</label>
-
-    <input
-      type="password"
-      id="newEmployeePin"
-      inputmode="numeric"
-      maxlength="4"
-      placeholder="Enter 4 digit PIN"
-    >
-
-    <button
-      class="primary"
-      onclick="addEmployee()"
-    >
-      Add Employee
-    </button>
-
-    <div id="addEmployeeMessage"></div>
 
     <button
       class="secondary"
@@ -571,8 +477,6 @@ th{
 
   </div>
 
-
-  <!-- OWNER ATTENDANCE -->
 
   <div class="card">
 
@@ -622,10 +526,9 @@ let allData = {
 };
 
 let currentEmployee = "";
-let currentOwner = "";
 
 
-/* ================= OWNER SETTINGS ================= */
+/* OWNER SETTINGS */
 
 function openOwnerSettings(){
 
@@ -645,7 +548,7 @@ function closeOwnerSettings(){
 }
 
 
-/* ================= LOAD DATA ================= */
+/* LOAD DATA */
 
 async function loadData(){
 
@@ -674,7 +577,7 @@ async function loadData(){
 }
 
 
-/* ================= EMPLOYEE LIST ================= */
+/* EMPLOYEE LIST */
 
 function fillEmployeeList(){
 
@@ -700,7 +603,7 @@ function fillEmployeeList(){
 }
 
 
-/* ================= LOGIN SCREENS ================= */
+/* LOGIN SCREENS */
 
 function showEmployeeLogin(){
 
@@ -749,7 +652,7 @@ function backToLogin(){
 }
 
 
-/* ================= EMPLOYEE LOGIN ================= */
+/* EMPLOYEE LOGIN */
 
 async function employeeLogin(){
 
@@ -801,8 +704,6 @@ async function employeeLogin(){
 
   }catch(error){
 
-    console.log(error);
-
     showLoginMessage(
       "Login failed. Please try again."
     );
@@ -812,7 +713,7 @@ async function employeeLogin(){
 }
 
 
-/* ================= OWNER LOGIN ================= */
+/* OWNER LOGIN */
 
 async function ownerLogin(){
 
@@ -852,8 +753,6 @@ async function ownerLogin(){
 
     if(data.success){
 
-      currentOwner = data.name;
-
       openOwnerScreen();
 
     }else{
@@ -864,8 +763,6 @@ async function ownerLogin(){
 
   }catch(error){
 
-    console.log(error);
-
     showLoginMessage(
       "Login failed. Please try again."
     );
@@ -875,7 +772,7 @@ async function ownerLogin(){
 }
 
 
-/* ================= OPEN EMPLOYEE ================= */
+/* OPEN EMPLOYEE SCREEN */
 
 function openEmployeeScreen(){
 
@@ -910,7 +807,7 @@ function openEmployeeScreen(){
 }
 
 
-/* ================= OPEN OWNER ================= */
+/* OPEN OWNER SCREEN */
 
 function openOwnerScreen(){
 
@@ -931,7 +828,7 @@ function openOwnerScreen(){
 }
 
 
-/* ================= CHECK IN ================= */
+/* CHECK IN */
 
 function checkIn(){
 
@@ -965,7 +862,7 @@ function checkIn(){
 }
 
 
-/* ================= CHECK OUT ================= */
+/* CHECK OUT */
 
 function checkOut(){
 
@@ -999,7 +896,7 @@ function checkOut(){
 }
 
 
-/* ================= CALCULATE HOURS ================= */
+/* CALCULATE HOURS */
 
 function calculateHours(){
 
@@ -1063,7 +960,7 @@ function calculateHours(){
 }
 
 
-/* ================= RESET ================= */
+/* RESET */
 
 function resetTimeEntry(){
 
@@ -1094,7 +991,7 @@ function resetTimeEntry(){
 }
 
 
-/* ================= SAVE ATTENDANCE ================= */
+/* SAVE ATTENDANCE */
 
 async function saveAttendance(){
 
@@ -1166,8 +1063,6 @@ async function saveAttendance(){
 
   }catch(error){
 
-    console.log(error);
-
     showEmployeeMessage(
       "Could not save attendance."
     );
@@ -1177,7 +1072,7 @@ async function saveAttendance(){
 }
 
 
-/* ================= EMPLOYEE ATTENDANCE ================= */
+/* EMPLOYEE ATTENDANCE */
 
 function renderEmployeeAttendance(){
 
@@ -1222,7 +1117,7 @@ function renderEmployeeAttendance(){
 }
 
 
-/* ================= OWNER ATTENDANCE ================= */
+/* OWNER ATTENDANCE */
 
 function renderOwnerAttendance(){
 
@@ -1340,5 +1235,175 @@ function renderOwnerAttendance(){
 
     actionCell.appendChild(declineBtn);
 
+
     tr.appendChild(nameCell);
+
     tr.appendChild(dateCell);
+
+    tr.appendChild(inCell);
+
+    tr.appendChild(outCell);
+
+    tr.appendChild(hoursCell);
+
+    tr.appendChild(otCell);
+
+    tr.appendChild(statusCell);
+
+    tr.appendChild(actionCell);
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+/* CHANGE STATUS */
+
+async function changeStatus(name,date,status){
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"updateStatus",
+          name:name,
+          date:date,
+          status:status
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      await loadData();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      alert(data.message);
+
+    }
+
+  }catch(error){
+
+    alert(
+      "Could not update status."
+    );
+
+  }
+
+}
+
+
+/* STATUS BADGE */
+
+function statusBadge(status){
+
+  const s =
+    String(status || "Pending")
+      .toLowerCase();
+
+  let cls =
+    "pending";
+
+  if(s === "approved"){
+    cls = "approved";
+  }
+
+  if(s === "declined"){
+    cls = "declined";
+  }
+
+  return (
+    '<span class="status ' +
+    cls +
+    '">' +
+    (status || "Pending") +
+    '</span>'
+  );
+
+}
+
+
+/* LOGOUT */
+
+function logout(){
+
+  currentEmployee = "";
+
+  document
+    .getElementById("employeeScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("loginScreen")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("logoutBtn")
+    .classList.add("hidden");
+
+  backToLogin();
+
+}
+
+
+/* MESSAGES */
+
+function showLoginMessage(text){
+
+  document
+    .getElementById("loginMessage")
+    .innerHTML =
+    '<div class="message">' +
+    text +
+    '</div>';
+
+}
+
+
+function showEmployeeMessage(text){
+
+  document
+    .getElementById("employeeMessage")
+    .innerHTML =
+    '<div class="message">' +
+    text +
+    '</div>';
+
+}
+
+
+/* START */
+
+loadData();
+
+</script>
+
+
+<script>
+
+/* SERVICE WORKER */
+
+if("serviceWorker" in navigator){
+
+  navigator.serviceWorker.register("./sw.js");
+
+}
+
+</script>
+
+</body>
+</html>

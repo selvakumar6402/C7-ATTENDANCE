@@ -195,6 +195,24 @@ th{
   font-weight:bold;
 }
 
+.link-btn{
+  background:none;
+  border:none;
+  color:#1e293b;
+  text-decoration:underline;
+  cursor:pointer;
+  padding:0;
+  font-size:13px;
+  font-weight:normal;
+}
+
+.row-flex{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
 @media(max-width:600px){
   .grid{
     grid-template-columns:1fr;
@@ -267,6 +285,58 @@ th{
       Back
     </button>
 
+    <p style="margin-top:10px;text-align:center;">
+      <button type="button" class="link-btn" onclick="showEmployeeResetPin()">Forgot PIN?</button>
+    </p>
+
+  </div>
+
+
+  <!-- EMPLOYEE RESET PIN (forgot PIN, requires owner authorization) -->
+  <div id="employeeResetPin" class="hidden">
+
+    <h2>Reset Employee PIN</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      For security, resetting an employee PIN requires an Owner to authorize it.
+    </p>
+
+    <label>Employee Name</label>
+
+    <select id="resetEmpName">
+      <option value="">Select employee</option>
+    </select>
+
+    <label>New 4 Digit PIN</label>
+
+    <input id="resetEmpNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+    <label>Confirm New PIN</label>
+
+    <input id="resetEmpConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+    <label>Authorizing Owner</label>
+
+    <select id="resetEmpAuthOwner">
+      <option value="">Select Owner</option>
+      <option value="NAVIN">NAVIN</option>
+      <option value="VARSHA">VARSHA</option>
+    </select>
+
+    <label>Owner PIN</label>
+
+    <input id="resetEmpAuthPin" type="password" inputmode="numeric" maxlength="4" placeholder="Owner PIN">
+
+    <button class="primary" onclick="submitEmployeePinReset()">
+      Reset PIN
+    </button>
+
+    <button class="secondary" onclick="backToLogin()">
+      Back
+    </button>
+
+    <div id="resetEmpMessage"></div>
+
   </div>
 
 
@@ -289,13 +359,7 @@ th{
 
     <label>Owner PIN</label>
 
-    <input
-      id="ownerPin"
-      type="password"
-      inputmode="numeric"
-      maxlength="4"
-      placeholder="Enter PIN"
-    >
+    <input id="ownerPin" type="password" inputmode="numeric" maxlength="4" placeholder="Enter PIN">
 
     <button class="primary" onclick="ownerLogin()">
       Login
@@ -304,6 +368,60 @@ th{
     <button class="secondary" onclick="backToLogin()">
       Back
     </button>
+
+    <p style="margin-top:10px;text-align:center;">
+      <button type="button" class="link-btn" onclick="showOwnerResetPin()">Forgot PIN?</button>
+    </p>
+
+  </div>
+
+
+  <!-- OWNER RESET PIN (forgot PIN, requires the OTHER owner to authorize) -->
+  <div id="ownerResetPin" class="hidden">
+
+    <h2>Reset Owner PIN</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      For security, resetting an Owner PIN requires the OTHER owner to authorize it.
+    </p>
+
+    <label>Owner To Reset</label>
+
+    <select id="resetOwnerTarget">
+      <option value="">Select Owner</option>
+      <option value="NAVIN">NAVIN</option>
+      <option value="VARSHA">VARSHA</option>
+    </select>
+
+    <label>New 4 Digit PIN</label>
+
+    <input id="resetOwnerNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+    <label>Confirm New PIN</label>
+
+    <input id="resetOwnerConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+    <label>Authorizing Owner</label>
+
+    <select id="resetOwnerAuth">
+      <option value="">Select the OTHER Owner</option>
+      <option value="NAVIN">NAVIN</option>
+      <option value="VARSHA">VARSHA</option>
+    </select>
+
+    <label>Authorizing Owner PIN</label>
+
+    <input id="resetOwnerAuthPin" type="password" inputmode="numeric" maxlength="4" placeholder="Owner PIN">
+
+    <button class="primary" onclick="submitOwnerPinReset()">
+      Reset PIN
+    </button>
+
+    <button class="secondary" onclick="backToLogin()">
+      Back
+    </button>
+
+    <div id="resetOwnerMessage"></div>
 
   </div>
 
@@ -317,7 +435,10 @@ th{
 
   <div class="card">
 
-    <h2 id="employeeWelcome"></h2>
+    <div class="row-flex">
+      <h2 id="employeeWelcome"></h2>
+      <button class="secondary" onclick="openEmployeeSettings()" title="Settings">⚙️</button>
+    </div>
 
     <p>Enter today's attendance.</p>
 
@@ -432,9 +553,71 @@ th{
   </div>
 
 
+  <!-- EMPLOYEE SETTINGS (Change PIN) -->
+  <div id="employeeSettingsPanel" class="card hidden">
+
+    <h2>⚙️ My Settings</h2>
+
+    <div class="subcard">
+
+      <h3>Change PIN</h3>
+
+      <label>Current PIN</label>
+
+      <input id="empChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
+
+      <label>New PIN</label>
+
+      <input id="empChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+      <label>Confirm New PIN</label>
+
+      <input id="empChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+      <button class="success" onclick="submitEmployeeChangePin()">
+        Update PIN
+      </button>
+
+      <div id="empChangePinMessage"></div>
+
+    </div>
+
+    <button class="secondary" style="margin-top:16px;" onclick="closeEmployeeSettings()">
+      Back
+    </button>
+
+  </div>
+
+
   <div class="card">
 
     <h2>My Attendance</h2>
+
+    <div class="subcard">
+
+      <h3>Download My Attendance</h3>
+
+      <div class="grid">
+
+        <div>
+          <label>From Date</label>
+          <input type="date" id="empFromDate">
+        </div>
+
+        <div>
+          <label>To Date</label>
+          <input type="date" id="empToDate">
+        </div>
+
+      </div>
+
+      <button class="primary" onclick="downloadEmployeeAttendance()">
+        Download CSV
+      </button>
+
+      <div id="empDownloadMessage"></div>
+
+    </div>
 
     <div class="table-wrap">
 
@@ -569,6 +752,32 @@ th{
 
     </div>
 
+    <div class="subcard">
+
+      <h3>Change My PIN</h3>
+
+      <p style="font-size:13px;color:#596273;">Logged in as <b id="ownerSettingsName"></b></p>
+
+      <label>Current PIN</label>
+
+      <input id="ownerChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
+
+      <label>New PIN</label>
+
+      <input id="ownerChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+      <label>Confirm New PIN</label>
+
+      <input id="ownerChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+      <button class="success" onclick="submitOwnerChangePin()">
+        Update PIN
+      </button>
+
+      <div id="ownerChangePinMessage"></div>
+
+    </div>
+
     <button
       class="secondary"
       style="margin-top:16px;"
@@ -588,6 +797,38 @@ th{
       Tip: if a record needs a correction, tap <b>Decline</b> to edit the
       Date, Check-In and Check-Out times, then tap <b>Save &amp; Approve</b>.
     </p>
+
+    <div class="subcard">
+
+      <h3>Download Attendance</h3>
+
+      <div class="grid">
+
+        <div>
+          <label>From Date</label>
+          <input type="date" id="ownerFromDate">
+        </div>
+
+        <div>
+          <label>To Date</label>
+          <input type="date" id="ownerToDate">
+        </div>
+
+      </div>
+
+      <label>Employee</label>
+
+      <select id="ownerDownloadEmployee">
+        <option value="">All Employees</option>
+      </select>
+
+      <button class="primary" onclick="downloadOwnerAttendance()">
+        Download CSV
+      </button>
+
+      <div id="ownerDownloadMessage"></div>
+
+    </div>
 
     <div class="table-wrap">
 
@@ -629,12 +870,21 @@ const API_URL =
 
 const MAX_EMPLOYEES = 10;
 
+/* Key used to persist the current login (employee or owner) in the
+   browser's localStorage so the person is not asked for their PIN
+   again on every refresh/reopen, per Feature 3. */
+const SESSION_KEY = "c7_attendance_session";
+
 let allData = {
   employees: [],
   attendance: []
 };
 
 let currentEmployee = "";
+
+/* Name of the currently logged-in owner (NAVIN or VARSHA), used for
+   the "Change My PIN" panel in Owner Settings. */
+let currentOwner = "";
 
 /* Tracks which owner-table record (if any) is currently being
    corrected after a Decline tap: { name, date } or null. */
@@ -645,6 +895,59 @@ let editingRecord = null;
 let editingEmployee = null;
 
 
+/* ================= SESSION PERSISTENCE ================= */
+
+function saveSession(type,name){
+
+  try{
+
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ type:type, name:name })
+    );
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+function loadSession(){
+
+  try{
+
+    const raw =
+      localStorage.getItem(SESSION_KEY);
+
+    return raw ? JSON.parse(raw) : null;
+
+  }catch(error){
+
+    return null;
+
+  }
+
+}
+
+
+function clearSession(){
+
+  try{
+
+    localStorage.removeItem(SESSION_KEY);
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
 /* OWNER SETTINGS */
 
 function openOwnerSettings(){
@@ -652,6 +955,10 @@ function openOwnerSettings(){
   document
     .getElementById("ownerSettings")
     .classList.remove("hidden");
+
+  document
+    .getElementById("ownerSettingsName")
+    .textContent = currentOwner;
 
   editingEmployee = null;
 
@@ -667,6 +974,31 @@ function closeOwnerSettings(){
     .classList.add("hidden");
 
   editingEmployee = null;
+
+}
+
+
+/* EMPLOYEE SETTINGS */
+
+function openEmployeeSettings(){
+
+  document
+    .getElementById("employeeSettingsPanel")
+    .classList.remove("hidden");
+
+}
+
+
+function closeEmployeeSettings(){
+
+  document
+    .getElementById("employeeSettingsPanel")
+    .classList.add("hidden");
+
+  document.getElementById("empChangePinMessage").innerHTML = "";
+  document.getElementById("empChangeCurrentPin").value = "";
+  document.getElementById("empChangeNewPin").value = "";
+  document.getElementById("empChangeConfirmPin").value = "";
 
 }
 
@@ -700,7 +1032,7 @@ async function loadData(){
 }
 
 
-/* EMPLOYEE LIST (login dropdown) */
+/* EMPLOYEE LIST (login dropdown + reset dropdown + owner download filter) */
 
 function fillEmployeeList(){
 
@@ -709,6 +1041,26 @@ function fillEmployeeList(){
 
   select.innerHTML =
     '<option value="">Select employee</option>';
+
+  const resetSelect =
+    document.getElementById("resetEmpName");
+
+  if(resetSelect){
+
+    resetSelect.innerHTML =
+      '<option value="">Select employee</option>';
+
+  }
+
+  const downloadSelect =
+    document.getElementById("ownerDownloadEmployee");
+
+  if(downloadSelect){
+
+    downloadSelect.innerHTML =
+      '<option value="">All Employees</option>';
+
+  }
 
   allData.employees.forEach(function(name){
 
@@ -720,6 +1072,34 @@ function fillEmployeeList(){
     option.textContent = name;
 
     select.appendChild(option);
+
+
+    if(resetSelect){
+
+      const resetOption =
+        document.createElement("option");
+
+      resetOption.value = name;
+
+      resetOption.textContent = name;
+
+      resetSelect.appendChild(resetOption);
+
+    }
+
+
+    if(downloadSelect){
+
+      const downloadOption =
+        document.createElement("option");
+
+      downloadOption.value = name;
+
+      downloadOption.textContent = name;
+
+      downloadSelect.appendChild(downloadOption);
+
+    }
 
   });
 
@@ -767,6 +1147,40 @@ function showOwnerLogin(){
 }
 
 
+function showEmployeeResetPin(){
+
+  document
+    .getElementById("roleButtons")
+    .classList.add("hidden");
+
+  document
+    .getElementById("employeeLogin")
+    .classList.add("hidden");
+
+  document
+    .getElementById("employeeResetPin")
+    .classList.remove("hidden");
+
+}
+
+
+function showOwnerResetPin(){
+
+  document
+    .getElementById("roleButtons")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerLogin")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerResetPin")
+    .classList.remove("hidden");
+
+}
+
+
 function backToLogin(){
 
   document
@@ -779,6 +1193,14 @@ function backToLogin(){
 
   document
     .getElementById("ownerLogin")
+    .classList.add("hidden");
+
+  document
+    .getElementById("employeeResetPin")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerResetPin")
     .classList.add("hidden");
 
   document
@@ -829,6 +1251,8 @@ async function employeeLogin(){
     if(data.success){
 
       currentEmployee = data.name;
+
+      saveSession("employee",currentEmployee);
 
       openEmployeeScreen();
 
@@ -889,6 +1313,10 @@ async function ownerLogin(){
 
     if(data.success){
 
+      currentOwner = data.name;
+
+      saveSession("owner",currentOwner);
+
       openOwnerScreen();
 
     }else{
@@ -923,6 +1351,10 @@ function openEmployeeScreen(){
   document
     .getElementById("logoutBtn")
     .classList.remove("hidden");
+
+  document
+    .getElementById("employeeSettingsPanel")
+    .classList.add("hidden");
 
   document
     .getElementById("employeeWelcome")
@@ -1018,6 +1450,10 @@ function openOwnerScreen(){
   document
     .getElementById("logoutBtn")
     .classList.remove("hidden");
+
+  document
+    .getElementById("ownerSettings")
+    .classList.add("hidden");
 
   editingRecord = null;
 
@@ -2233,6 +2669,629 @@ async function deleteEmployeeFromSettings(name){
 }
 
 
+/* ================= PIN MANAGEMENT (Feature 3) ================= */
+
+/* -- Change PIN (while logged in, current PIN already known) -- */
+
+async function submitEmployeeChangePin(){
+
+  const currentPin =
+    document.getElementById("empChangeCurrentPin").value.trim();
+
+  const newPin =
+    document.getElementById("empChangeNewPin").value.trim();
+
+  const confirmPin =
+    document.getElementById("empChangeConfirmPin").value.trim();
+
+  if(!currentPin || !newPin || !confirmPin){
+
+    showEmpChangePinMessage("Please fill all fields.");
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(newPin)){
+
+    showEmpChangePinMessage("New PIN must be exactly 4 digits.");
+
+    return;
+
+  }
+
+  if(newPin !== confirmPin){
+
+    showEmpChangePinMessage("New PIN and Confirm PIN do not match.");
+
+    return;
+
+  }
+
+  showEmpChangePinMessage("Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"changeEmployeePin",
+          name:currentEmployee,
+          currentPin:currentPin,
+          newPin:newPin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showEmpChangePinMessage(
+        data.message || "PIN changed successfully."
+      );
+
+      document.getElementById("empChangeCurrentPin").value = "";
+      document.getElementById("empChangeNewPin").value = "";
+      document.getElementById("empChangeConfirmPin").value = "";
+
+    }else{
+
+      showEmpChangePinMessage(
+        data.message || "Could not change PIN."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmpChangePinMessage(
+      "Could not change PIN. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showEmpChangePinMessage(text){
+
+  document
+    .getElementById("empChangePinMessage")
+    .innerHTML =
+    '<div class="message">' + text + '</div>';
+
+}
+
+
+async function submitOwnerChangePin(){
+
+  const currentPin =
+    document.getElementById("ownerChangeCurrentPin").value.trim();
+
+  const newPin =
+    document.getElementById("ownerChangeNewPin").value.trim();
+
+  const confirmPin =
+    document.getElementById("ownerChangeConfirmPin").value.trim();
+
+  if(!currentPin || !newPin || !confirmPin){
+
+    showOwnerChangePinMessage("Please fill all fields.");
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(newPin)){
+
+    showOwnerChangePinMessage("New PIN must be exactly 4 digits.");
+
+    return;
+
+  }
+
+  if(newPin !== confirmPin){
+
+    showOwnerChangePinMessage("New PIN and Confirm PIN do not match.");
+
+    return;
+
+  }
+
+  showOwnerChangePinMessage("Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"changeOwnerPin",
+          ownerName:currentOwner,
+          currentPin:currentPin,
+          newPin:newPin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showOwnerChangePinMessage(
+        data.message || "PIN changed successfully."
+      );
+
+      document.getElementById("ownerChangeCurrentPin").value = "";
+      document.getElementById("ownerChangeNewPin").value = "";
+      document.getElementById("ownerChangeConfirmPin").value = "";
+
+    }else{
+
+      showOwnerChangePinMessage(
+        data.message || "Could not change PIN."
+      );
+
+    }
+
+  }catch(error){
+
+    showOwnerChangePinMessage(
+      "Could not change PIN. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showOwnerChangePinMessage(text){
+
+  document
+    .getElementById("ownerChangePinMessage")
+    .innerHTML =
+    '<div class="message">' + text + '</div>';
+
+}
+
+
+/* -- Reset PIN (forgotten PIN, from the login screen, needs owner authorization) -- */
+
+async function submitEmployeePinReset(){
+
+  const name =
+    document.getElementById("resetEmpName").value;
+
+  const newPin =
+    document.getElementById("resetEmpNewPin").value.trim();
+
+  const confirmPin =
+    document.getElementById("resetEmpConfirmPin").value.trim();
+
+  const authOwner =
+    document.getElementById("resetEmpAuthOwner").value;
+
+  const authPin =
+    document.getElementById("resetEmpAuthPin").value.trim();
+
+  if(!name || !newPin || !confirmPin || !authOwner || !authPin){
+
+    showResetEmpMessage("Please fill all fields.");
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(newPin)){
+
+    showResetEmpMessage("New PIN must be exactly 4 digits.");
+
+    return;
+
+  }
+
+  if(newPin !== confirmPin){
+
+    showResetEmpMessage("New PIN and Confirm PIN do not match.");
+
+    return;
+
+  }
+
+  showResetEmpMessage("Resetting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"resetEmployeePin",
+          name:name,
+          newPin:newPin,
+          authOwnerName:authOwner,
+          authOwnerPin:authPin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showResetEmpMessage(
+        data.message || "PIN reset successfully. Please login."
+      );
+
+      document.getElementById("resetEmpNewPin").value = "";
+      document.getElementById("resetEmpConfirmPin").value = "";
+      document.getElementById("resetEmpAuthPin").value = "";
+
+    }else{
+
+      showResetEmpMessage(
+        data.message || "Could not reset PIN."
+      );
+
+    }
+
+  }catch(error){
+
+    showResetEmpMessage(
+      "Could not reset PIN. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showResetEmpMessage(text){
+
+  document
+    .getElementById("resetEmpMessage")
+    .innerHTML =
+    '<div class="message">' + text + '</div>';
+
+}
+
+
+async function submitOwnerPinReset(){
+
+  const target =
+    document.getElementById("resetOwnerTarget").value;
+
+  const newPin =
+    document.getElementById("resetOwnerNewPin").value.trim();
+
+  const confirmPin =
+    document.getElementById("resetOwnerConfirmPin").value.trim();
+
+  const authOwner =
+    document.getElementById("resetOwnerAuth").value;
+
+  const authPin =
+    document.getElementById("resetOwnerAuthPin").value.trim();
+
+  if(!target || !newPin || !confirmPin || !authOwner || !authPin){
+
+    showResetOwnerMessage("Please fill all fields.");
+
+    return;
+
+  }
+
+  if(target === authOwner){
+
+    showResetOwnerMessage(
+      "The authorizing owner must be different from the owner being reset."
+    );
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(newPin)){
+
+    showResetOwnerMessage("New PIN must be exactly 4 digits.");
+
+    return;
+
+  }
+
+  if(newPin !== confirmPin){
+
+    showResetOwnerMessage("New PIN and Confirm PIN do not match.");
+
+    return;
+
+  }
+
+  showResetOwnerMessage("Resetting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"resetOwnerPin",
+          ownerName:target,
+          newPin:newPin,
+          authOwnerName:authOwner,
+          authOwnerPin:authPin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      showResetOwnerMessage(
+        data.message || "PIN reset successfully. Please login."
+      );
+
+      document.getElementById("resetOwnerNewPin").value = "";
+      document.getElementById("resetOwnerConfirmPin").value = "";
+      document.getElementById("resetOwnerAuthPin").value = "";
+
+    }else{
+
+      showResetOwnerMessage(
+        data.message || "Could not reset PIN."
+      );
+
+    }
+
+  }catch(error){
+
+    showResetOwnerMessage(
+      "Could not reset PIN. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showResetOwnerMessage(text){
+
+  document
+    .getElementById("resetOwnerMessage")
+    .innerHTML =
+    '<div class="message">' + text + '</div>';
+
+}
+
+
+/* ================= ATTENDANCE DOWNLOAD (Feature 1) ================= */
+
+function csvEscape(value){
+
+  const str =
+    String(value === undefined || value === null ? "" : value);
+
+  if(/[",\n]/.test(str)){
+
+    return '"' + str.replace(/"/g,'""') + '"';
+
+  }
+
+  return str;
+
+}
+
+
+function filterByDateRange(records,fromDate,toDate){
+
+  return records.filter(function(row){
+
+    return row.date >= fromDate && row.date <= toDate;
+
+  });
+
+}
+
+
+function downloadCSV(records,filename){
+
+  const header =
+    ["Employee Name","Date","In Time","Out Time","Hours Worked","OT Hours","Status"];
+
+  let csv =
+    header.join(",") + "\n";
+
+  records.forEach(function(row){
+
+    const line = [
+      row.name,
+      row.date,
+      row.inTime || "-",
+      row.outTime || "-",
+      row.hoursWorked || "-",
+      row.otHours || "-",
+      row.status || "Pending"
+    ].map(csvEscape).join(",");
+
+    csv += line + "\n";
+
+  });
+
+  const blob =
+    new Blob([csv],{ type:"text/csv;charset=utf-8;" });
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+function downloadEmployeeAttendance(){
+
+  const from =
+    document.getElementById("empFromDate").value;
+
+  const to =
+    document.getElementById("empToDate").value;
+
+  if(!from || !to){
+
+    showEmpDownloadMessage("Please select both From Date and To Date.");
+
+    return;
+
+  }
+
+  if(from > to){
+
+    showEmpDownloadMessage("From Date cannot be after To Date.");
+
+    return;
+
+  }
+
+  const records =
+    allData.attendance.filter(function(row){
+
+      return row.name === currentEmployee && row.status !== "Open";
+
+    });
+
+  const filtered =
+    filterByDateRange(records,from,to);
+
+  if(filtered.length === 0){
+
+    showEmpDownloadMessage(
+      "No attendance records found for the selected date range."
+    );
+
+    return;
+
+  }
+
+  downloadCSV(
+    filtered,
+    currentEmployee.replace(/[^a-z0-9]/gi,"_") +
+    "_attendance_" + from + "_to_" + to + ".csv"
+  );
+
+  showEmpDownloadMessage("");
+
+}
+
+
+function showEmpDownloadMessage(text){
+
+  const el =
+    document.getElementById("empDownloadMessage");
+
+  el.innerHTML =
+    text ? '<div class="message">' + text + '</div>' : "";
+
+}
+
+
+function downloadOwnerAttendance(){
+
+  const from =
+    document.getElementById("ownerFromDate").value;
+
+  const to =
+    document.getElementById("ownerToDate").value;
+
+  const empFilter =
+    document.getElementById("ownerDownloadEmployee").value;
+
+  if(!from || !to){
+
+    showOwnerDownloadMessage("Please select both From Date and To Date.");
+
+    return;
+
+  }
+
+  if(from > to){
+
+    showOwnerDownloadMessage("From Date cannot be after To Date.");
+
+    return;
+
+  }
+
+  let records =
+    allData.attendance.filter(function(row){
+
+      return row.status !== "Open";
+
+    });
+
+  if(empFilter){
+
+    records =
+      records.filter(function(row){
+
+        return row.name === empFilter;
+
+      });
+
+  }
+
+  const filtered =
+    filterByDateRange(records,from,to);
+
+  if(filtered.length === 0){
+
+    showOwnerDownloadMessage(
+      "No attendance records found for the selected date range."
+    );
+
+    return;
+
+  }
+
+  downloadCSV(
+    filtered,
+    "attendance_" + from + "_to_" + to + ".csv"
+  );
+
+  showOwnerDownloadMessage("");
+
+}
+
+
+function showOwnerDownloadMessage(text){
+
+  const el =
+    document.getElementById("ownerDownloadMessage");
+
+  el.innerHTML =
+    text ? '<div class="message">' + text + '</div>' : "";
+
+}
+
+
 /* STATUS BADGE */
 
 function statusBadge(status){
@@ -2269,16 +3328,28 @@ function logout(){
 
   currentEmployee = "";
 
+  currentOwner = "";
+
   editingRecord = null;
 
   editingEmployee = null;
+
+  clearSession();
 
   document
     .getElementById("employeeScreen")
     .classList.add("hidden");
 
   document
+    .getElementById("employeeSettingsPanel")
+    .classList.add("hidden");
+
+  document
     .getElementById("ownerScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("ownerSettings")
     .classList.add("hidden");
 
   document
@@ -2332,9 +3403,55 @@ function showEmployeeSettingsMessage(text){
 }
 
 
-/* START */
+/* START
+   Loads data first, then checks localStorage for a saved login
+   session so the person is not asked to log in again after a
+   refresh/reopen (Feature 3), unless they explicitly logged out. */
 
-loadData();
+async function init(){
+
+  await loadData();
+
+  const session =
+    loadSession();
+
+  if(!session){
+
+    return;
+
+  }
+
+  if(
+    session.type === "employee" &&
+    allData.employees.some(function(n){
+      return n.toLowerCase() === session.name.toLowerCase();
+    })
+  ){
+
+    currentEmployee = session.name;
+
+    openEmployeeScreen();
+
+  }else if(
+    session.type === "owner" &&
+    (session.name === "NAVIN" || session.name === "VARSHA")
+  ){
+
+    currentOwner = session.name;
+
+    openOwnerScreen();
+
+  }else{
+
+    /* Saved session no longer valid (e.g. employee was removed) */
+
+    clearSession();
+
+  }
+
+}
+
+init();
 
 </script>
 

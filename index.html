@@ -589,6 +589,41 @@ th{
 
     </div>
 
+    <div class="subcard">
+
+      <h3>Manual Check-In / Check-Out Request</h3>
+
+      <p style="font-size:13px;color:#596273;">
+        Forgot to Check-In or Check-Out? Select the date and enter the
+        correct times below. Your Owner will review and approve it.
+      </p>
+
+      <label>Attendance Date</label>
+
+      <input type="date" id="manualReqDate">
+
+      <div id="manualReqShifts"></div>
+
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+
+        <button type="button" class="secondary" id="manualReqAddShiftBtn" onclick="addManualRequestShiftRow()">
+          + Add Shift
+        </button>
+
+        <button type="button" class="secondary" id="manualReqRemoveShiftBtn" onclick="removeLastManualRequestShiftRow()">
+          - Remove Last Shift
+        </button>
+
+      </div>
+
+      <button class="success" onclick="submitManualRequest()">
+        Submit Request
+      </button>
+
+      <div id="manualReqMessage"></div>
+
+    </div>
+
     <button class="secondary" style="margin-top:16px;" onclick="closeEmployeeSettings()">
       Back
     </button>
@@ -838,6 +873,21 @@ th{
 
   <div class="card">
 
+    <h2>Manual Check-In / Check-Out Requests</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      Employees can submit a forgotten Check-In/Check-Out from their
+      Settings. Tap <b>Edit</b> to correct the times if needed, then tap
+      <b>Approve / Save</b> to add them to attendance.
+    </p>
+
+    <div id="manualRequestsList"></div>
+
+  </div>
+
+
+  <div class="card">
+
     <h2>Attendance Records</h2>
 
     <p style="font-size:13px;color:#596273;">
@@ -955,7 +1005,8 @@ const SESSION_KEY = "c7_attendance_session";
 
 let allData = {
   employees: [],
-  attendance: []
+  attendance: [],
+  manualRequests: []
 };
 
 let currentEmployee = "";
@@ -977,6 +1028,16 @@ let editingEmployee = null;
    so the selected employee's view picks up new Check-In/Check-Out
    data automatically without the Owner needing to reload the page. */
 let ownerAttendancePollTimer = null;
+
+/* How many shift rows are currently shown on the Employee's Manual
+   Check-In/Check-Out Request form (1-3). */
+let manualReqShiftCount = 0;
+
+/* requestId of the manual request the Owner currently has open for
+   editing (Edit tapped, not yet Approved/Saved), or null. Used the
+   same way as editingRecord -- to stop the auto-refresh poll from
+   overwriting an in-progress edit. */
+let editingManualRequestId = null;
 
 
 /* ================= SESSION PERSISTENCE ================= */
@@ -1070,6 +1131,10 @@ function openEmployeeSettings(){
     .getElementById("employeeSettingsPanel")
     .classList.remove("hidden");
 
+  initManualRequestForm();
+
+  showManualReqMessage("");
+
 }
 
 
@@ -1083,6 +1148,205 @@ function closeEmployeeSettings(){
   document.getElementById("empChangeCurrentPin").value = "";
   document.getElementById("empChangeNewPin").value = "";
   document.getElementById("empChangeConfirmPin").value = "";
+
+}
+
+
+/* ================= MANUAL CHECK-IN / CHECK-OUT REQUEST (Employee side) =================
+ * Lets an employee who forgot to Check-In/Check-Out submit the correct
+ * time(s) for a past date, with up to 3 shift pairs, for the Owner to
+ * review and approve. The employee's attendance itself is only
+ * updated once the Owner approves (see approveManualRequest()).
+ */
+
+function initManualRequestForm(){
+
+  manualReqShiftCount = 0;
+
+  document.getElementById("manualReqShifts").innerHTML = "";
+
+  document.getElementById("manualReqDate").value = "";
+
+  addManualRequestShiftRow();
+
+}
+
+
+function addManualRequestShiftRow(){
+
+  if(manualReqShiftCount >= 3){
+    return;
+  }
+
+  manualReqShiftCount++;
+
+  const shiftNum = manualReqShiftCount;
+
+  const container =
+    document.getElementById("manualReqShifts");
+
+  const row =
+    document.createElement("div");
+
+  row.className = "subcard";
+  row.id = "manualReqShiftRow" + shiftNum;
+
+  row.innerHTML =
+    '<h3 style="margin:0 0 8px;font-size:15px;">Shift ' + shiftNum + '</h3>' +
+    '<div class="grid">' +
+      '<div>' +
+        '<label>In Time</label>' +
+        '<input type="time" id="manualReqIn' + shiftNum + '">' +
+      '</div>' +
+      '<div>' +
+        '<label>Out Time</label>' +
+        '<input type="time" id="manualReqOut' + shiftNum + '">' +
+      '</div>' +
+    '</div>';
+
+  container.appendChild(row);
+
+  updateManualReqShiftButtons();
+
+}
+
+
+function removeLastManualRequestShiftRow(){
+
+  if(manualReqShiftCount <= 1){
+    return;
+  }
+
+  const row =
+    document.getElementById("manualReqShiftRow" + manualReqShiftCount);
+
+  if(row){
+    row.remove();
+  }
+
+  manualReqShiftCount--;
+
+  updateManualReqShiftButtons();
+
+}
+
+
+function updateManualReqShiftButtons(){
+
+  const addBtn =
+    document.getElementById("manualReqAddShiftBtn");
+
+  const removeBtn =
+    document.getElementById("manualReqRemoveShiftBtn");
+
+  if(addBtn){
+    addBtn.disabled = manualReqShiftCount >= 3;
+  }
+
+  if(removeBtn){
+    removeBtn.disabled = manualReqShiftCount <= 1;
+  }
+
+}
+
+
+async function submitManualRequest(){
+
+  const date =
+    document.getElementById("manualReqDate").value;
+
+  if(!date){
+
+    showManualReqMessage("Please select the attendance date.");
+
+    return;
+
+  }
+
+  const shifts = [];
+
+  for(let i = 1; i <= manualReqShiftCount; i++){
+
+    const inVal =
+      document.getElementById("manualReqIn" + i).value;
+
+    const outVal =
+      document.getElementById("manualReqOut" + i).value;
+
+    if(!inVal || !outVal){
+
+      showManualReqMessage(
+        "Please fill In Time and Out Time for Shift " + i + "."
+      );
+
+      return;
+
+    }
+
+    shifts.push({ inTime: inVal, outTime: outVal });
+
+  }
+
+  if(shifts.length === 0){
+
+    showManualReqMessage("Please add at least one shift.");
+
+    return;
+
+  }
+
+  showManualReqMessage("Submitting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"submitManualRequest",
+          name:currentEmployee,
+          date:date,
+          shifts:shifts
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      initManualRequestForm();
+
+      showManualReqMessage(
+        "Request submitted. Waiting for Owner approval."
+      );
+
+    }else{
+
+      showManualReqMessage(
+        data.message || "Could not submit request."
+      );
+
+    }
+
+  }catch(error){
+
+    showManualReqMessage(
+      "Could not submit request. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showManualReqMessage(text){
+
+  document
+    .getElementById("manualReqMessage")
+    .innerHTML =
+    text ? '<div class="message">' + text + '</div>' : "";
 
 }
 
@@ -1611,7 +1875,11 @@ function openOwnerScreen(){
 
   editingRecord = null;
 
+  editingManualRequestId = null;
+
   renderOwnerAttendance();
+
+  renderManualRequests();
 
   startOwnerAttendancePoll();
 
@@ -1619,13 +1887,14 @@ function openOwnerScreen(){
 
 
 /* ================= OWNER DASHBOARD AUTO-REFRESH =================
- * While the Owner is viewing a selected employee's attendance, poll
- * for fresh data every 20 seconds so Check-In/Check-Out activity from
- * the employee's own device shows up without the Owner reloading the
- * page. Skips a tick if no employee is selected yet, or if the Owner
- * is mid-edit on a record (so a refresh never overwrites what they're
- * typing). fillEmployeeList() (called by loadData()) already restores
- * the selected employee afterwards, so the view stays put.
+ * While the Owner Dashboard is open, poll for fresh data every 20
+ * seconds so Check-In/Check-Out activity and new Manual Requests from
+ * an employee's own device show up without the Owner reloading the
+ * page. Skips a tick entirely if the Owner is mid-edit on a regular
+ * attendance record or a manual request (so a refresh never overwrites
+ * what they're typing). fillEmployeeList() (called by loadData())
+ * already restores the selected employee afterwards, so the "View
+ * Employee Attendance" selection stays put.
  */
 
 function startOwnerAttendancePoll(){
@@ -1657,20 +1926,22 @@ async function ownerAttendancePollTick(){
     return;
   }
 
-  const select =
-    document.getElementById("ownerViewEmployee");
-
-  if(!select || !select.value){
-    return;
-  }
-
-  if(editingRecord){
+  if(editingRecord || editingManualRequestId){
     return;
   }
 
   await loadData();
 
-  renderOwnerAttendance();
+  renderManualRequests();
+
+  const select =
+    document.getElementById("ownerViewEmployee");
+
+  if(select && select.value){
+
+    renderOwnerAttendance();
+
+  }
 
 }
 
@@ -2481,6 +2752,344 @@ function renderOwnerAttendance(){
 function onOwnerViewEmployeeChange(){
 
   renderOwnerAttendance();
+
+}
+
+
+/* ================= MANUAL CHECK-IN / CHECK-OUT REQUESTS (Owner side) =================
+ * Renders the queue of pending manual requests from any employee
+ * (independent of the "View Employee Attendance" selection above).
+ * Each request shows its shift(s) as disabled time inputs by default;
+ * "Edit" enables them for correction; "Approve / Save" sends the
+ * current values to the backend, which is the only point at which the
+ * employee's attendance is actually updated.
+ */
+
+function renderManualRequests(){
+
+  const container =
+    document.getElementById("manualRequestsList");
+
+  if(!container){
+    return;
+  }
+
+  container.innerHTML = "";
+
+  const requests =
+    allData.manualRequests || [];
+
+  if(requests.length === 0){
+
+    container.innerHTML =
+      '<p style="font-size:13px;color:#596273;">No pending manual requests.</p>';
+
+    return;
+
+  }
+
+  requests.forEach(function(req){
+
+    const card =
+      document.createElement("div");
+
+    card.className = "subcard";
+    card.id = "manualReqCard_" + req.requestId;
+
+    const header =
+      document.createElement("div");
+
+    header.innerHTML =
+      "<strong>Employee:</strong> " + escapeHtml(req.name) +
+      " &nbsp;&nbsp; <strong>Date:</strong> " + escapeHtml(req.date);
+
+    card.appendChild(header);
+
+    const table =
+      document.createElement("table");
+
+    const thead =
+      document.createElement("thead");
+
+    thead.innerHTML =
+      "<tr><th>Shift</th><th>In Time</th><th>Out Time</th></tr>";
+
+    table.appendChild(thead);
+
+    const tbody =
+      document.createElement("tbody");
+
+    req.shifts.forEach(function(shift,idx){
+
+      const tr =
+        document.createElement("tr");
+
+      const shiftCell =
+        document.createElement("td");
+
+      shiftCell.textContent =
+        "Shift " + (idx + 1);
+
+      const inCell =
+        document.createElement("td");
+
+      const inInput =
+        document.createElement("input");
+
+      inInput.type = "time";
+      inInput.className = "cell-input";
+      inInput.id = "mrIn_" + req.requestId + "_" + idx;
+      inInput.value = shift.inTime || "";
+      inInput.disabled = true;
+
+      inCell.appendChild(inInput);
+
+      const outCell =
+        document.createElement("td");
+
+      const outInput =
+        document.createElement("input");
+
+      outInput.type = "time";
+      outInput.className = "cell-input";
+      outInput.id = "mrOut_" + req.requestId + "_" + idx;
+      outInput.value = shift.outTime || "";
+      outInput.disabled = true;
+
+      outCell.appendChild(outInput);
+
+      tr.appendChild(shiftCell);
+
+      tr.appendChild(inCell);
+
+      tr.appendChild(outCell);
+
+      tbody.appendChild(tr);
+
+    });
+
+    table.appendChild(tbody);
+
+    card.appendChild(table);
+
+    const actions =
+      document.createElement("div");
+
+    actions.style.display = "flex";
+    actions.style.gap = "10px";
+    actions.style.marginTop = "10px";
+
+    const editBtn =
+      document.createElement("button");
+
+    editBtn.className = "secondary";
+    editBtn.textContent = "Edit";
+
+    editBtn.onclick =
+      function(){
+
+        toggleManualRequestEdit(req.requestId);
+
+      };
+
+    const approveBtn =
+      document.createElement("button");
+
+    approveBtn.className = "success";
+    approveBtn.textContent = "Approve / Save";
+
+    approveBtn.onclick =
+      function(){
+
+        approveManualRequest(
+          req.requestId,
+          req.name,
+          req.date,
+          req.shifts.length
+        );
+
+      };
+
+    actions.appendChild(editBtn);
+
+    actions.appendChild(approveBtn);
+
+    card.appendChild(actions);
+
+    const msgDiv =
+      document.createElement("div");
+
+    msgDiv.id = "manualReqMsg_" + req.requestId;
+
+    card.appendChild(msgDiv);
+
+    container.appendChild(card);
+
+  });
+
+}
+
+
+function toggleManualRequestEdit(requestId){
+
+  const card =
+    document.getElementById("manualReqCard_" + requestId);
+
+  if(!card){
+    return;
+  }
+
+  editingManualRequestId = requestId;
+
+  const inputs =
+    card.querySelectorAll("input[type='time']");
+
+  inputs.forEach(function(input){
+
+    input.disabled = false;
+
+  });
+
+}
+
+
+async function approveManualRequest(requestId,name,date,shiftCount){
+
+  const shifts = [];
+
+  for(let i = 0; i < shiftCount; i++){
+
+    const inInput =
+      document.getElementById("mrIn_" + requestId + "_" + i);
+
+    const outInput =
+      document.getElementById("mrOut_" + requestId + "_" + i);
+
+    const inTime =
+      inInput ? inInput.value : "";
+
+    const outTime =
+      outInput ? outInput.value : "";
+
+    if(!inTime || !outTime){
+
+      showManualReqCardMessage(
+        requestId,
+        "Please fill In Time and Out Time for all shifts."
+      );
+
+      return;
+
+    }
+
+    const hours =
+      computeHours(inTime,outTime);
+
+    shifts.push({
+      inTime: inTime,
+      outTime: outTime,
+      hoursWorked: hours.hoursWorked,
+      otHours: hours.otHours
+    });
+
+  }
+
+  showManualReqCardMessage(requestId,"Saving...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"approveManualRequest",
+          requestId:requestId,
+          name:name,
+          date:date,
+          shifts:shifts
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      /* Reflect the newly approved shifts (and removal of the request
+         from the pending queue) in the already-loaded data, same
+         no-full-reload pattern used by Accept/Edit/Save elsewhere. */
+
+      shifts.forEach(function(shift){
+
+        allData.attendance.push({
+          name: name,
+          date: date,
+          inTime: shift.inTime,
+          outTime: shift.outTime,
+          hoursWorked: shift.hoursWorked,
+          otHours: shift.otHours,
+          status: "Approved"
+        });
+
+      });
+
+      allData.manualRequests =
+        (allData.manualRequests || []).filter(function(r){
+
+          return r.requestId !== requestId;
+
+        });
+
+      editingManualRequestId = null;
+
+      renderManualRequests();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      showManualReqCardMessage(
+        requestId,
+        data.message || "Could not approve request."
+      );
+
+    }
+
+  }catch(error){
+
+    showManualReqCardMessage(
+      requestId,
+      "Could not approve request. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showManualReqCardMessage(requestId,text){
+
+  const el =
+    document.getElementById("manualReqMsg_" + requestId);
+
+  if(el){
+
+    el.innerHTML =
+      text ? '<div class="message">' + text + '</div>' : "";
+
+  }
+
+}
+
+
+function escapeHtml(text){
+
+  return String(text || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
 
 }
 
@@ -3987,6 +4596,8 @@ function logout(){
   editingRecord = null;
 
   editingEmployee = null;
+
+  editingManualRequestId = null;
 
   stopOwnerAttendancePoll();
 

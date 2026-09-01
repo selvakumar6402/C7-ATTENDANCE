@@ -1810,11 +1810,11 @@ function restoreOpenRecord(record){
 
   document
     .getElementById("inTime")
-    .value = record.inTime || "";
+    .value = formatTimeDisplay(record.inTime);
 
   document
     .getElementById("outTime")
-    .value = record.outTime || "";
+    .value = formatTimeDisplay(record.outTime);
 
   document
     .getElementById("checkInBtn")
@@ -1842,7 +1842,7 @@ function restoreOpenRecord(record){
 
     showEmployeeMessage(
       "You're still checked in since " +
-      record.inTime +
+      formatTimeDisplay(record.inTime) +
       " on " +
       record.date +
       ". Tap Check Out when you're done."
@@ -2016,7 +2016,7 @@ async function checkIn(){
 
         document
           .getElementById("inTime")
-          .value = data.inTime;
+          .value = formatTimeDisplay(data.inTime);
 
         calculateHours();
 
@@ -2026,7 +2026,7 @@ async function checkIn(){
 
       showEmployeeMessage(
         "Checked in at " +
-        (data.inTime || timeValue) +
+        (formatTimeDisplay(data.inTime) || timeValue) +
         ". This stays saved even if you refresh the page."
       );
 
@@ -2149,6 +2149,71 @@ async function checkOut(){
     );
 
   }
+
+}
+
+
+/* ================= TIME DISPLAY FORMATTER (display-only) =================
+ * Normalizes an In Time / Out Time value into a clean "HH:mm" string
+ * for ON-SCREEN DISPLAY ONLY. This does NOT change, re-save, or
+ * re-interpret the actual stored value anywhere -- it only decides
+ * what text/inputs show. It exists to guard against any older/legacy
+ * record whose In/Out Time text might still contain a stray full
+ * date/timezone string (e.g. "...GMT+0530 (India Standard Time)")
+ * from before earlier fixes in this app, so every phone/browser shows
+ * the exact same plain "HH:mm" regardless of what's underneath.
+ *
+ * computeHours()/calculateHours() below are completely untouched by
+ * this function -- they still do their own independent parsing, so
+ * Hours Worked / OT calculations are unaffected either way.
+ */
+
+function formatTimeDisplay(value){
+
+  if(value === undefined || value === null){
+    return "";
+  }
+
+  const str =
+    String(value).trim();
+
+  if(!str){
+    return "";
+  }
+
+  /* Already a clean "HH:mm" or "HH:mm:ss" -- the normal case for
+     every record saved by this app. Just normalize the padding. */
+
+  const simpleMatch =
+    str.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+
+  if(simpleMatch){
+
+    const hh =
+      String(Math.min(23,parseInt(simpleMatch[1],10))).padStart(2,"0");
+
+    return hh + ":" + simpleMatch[2];
+
+  }
+
+  /* Defensive fallback for any legacy value that isn't a plain
+     "HH:mm" -- pull just the first HH:mm pattern out of it (this is
+     what strips away any GMT/UTC/timezone-name/full-date text) and
+     show that. */
+
+  const hmMatch =
+    str.match(/(\d{1,2}):(\d{2})/);
+
+  if(hmMatch){
+
+    const hh =
+      String(Math.min(23,parseInt(hmMatch[1],10))).padStart(2,"0");
+
+    return hh + ":" + hmMatch[2];
+
+  }
+
+  return "";
 
 }
 
@@ -2414,8 +2479,8 @@ function renderEmployeeAttendance(){
 
     tr.innerHTML =
       "<td>" + row.date + "</td>" +
-      "<td>" + (row.inTime || "-") + "</td>" +
-      "<td>" + (row.outTime || "-") + "</td>" +
+      "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
+      "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
       "<td>" + (row.hoursWorked || "-") + "</td>" +
       "<td>" + (row.otHours || "-") + "</td>" +
       "<td>" + statusBadge(row.status) + "</td>";
@@ -2583,7 +2648,7 @@ function renderOwnerAttendance(){
       inInput.type = "time";
       inInput.id = "editInTimeInput";
       inInput.className = "cell-input";
-      inInput.value = row.inTime || "";
+      inInput.value = formatTimeDisplay(row.inTime);
 
       inCell.appendChild(inInput);
 
@@ -2594,7 +2659,7 @@ function renderOwnerAttendance(){
       outInput.type = "time";
       outInput.id = "editOutTimeInput";
       outInput.className = "cell-input";
-      outInput.value = row.outTime || "";
+      outInput.value = formatTimeDisplay(row.outTime);
 
       outCell.appendChild(outInput);
 
@@ -2648,9 +2713,9 @@ function renderOwnerAttendance(){
 
       dateCell.textContent = row.date;
 
-      inCell.textContent = row.inTime || "-";
+      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
 
-      outCell.textContent = row.outTime || "-";
+      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
 
       statusCell.innerHTML =
         statusBadge(row.status);
@@ -2661,9 +2726,9 @@ function renderOwnerAttendance(){
 
       dateCell.textContent = row.date;
 
-      inCell.textContent = row.inTime || "-";
+      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
 
-      outCell.textContent = row.outTime || "-";
+      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
 
       statusCell.innerHTML =
         statusBadge(row.status);
@@ -2839,7 +2904,7 @@ function renderManualRequests(){
       inInput.type = "time";
       inInput.className = "cell-input";
       inInput.id = "mrIn_" + req.requestId + "_" + idx;
-      inInput.value = shift.inTime || "";
+      inInput.value = formatTimeDisplay(shift.inTime);
       inInput.disabled = true;
 
       inCell.appendChild(inInput);
@@ -2853,7 +2918,7 @@ function renderManualRequests(){
       outInput.type = "time";
       outInput.className = "cell-input";
       outInput.id = "mrOut_" + req.requestId + "_" + idx;
-      outInput.value = shift.outTime || "";
+      outInput.value = formatTimeDisplay(shift.outTime);
       outInput.disabled = true;
 
       outCell.appendChild(outInput);

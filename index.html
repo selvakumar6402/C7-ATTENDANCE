@@ -157,6 +157,11 @@ th{
   color:#92400e;
 }
 
+.onduty{
+  background:#dbeafe;
+  color:#1e40af;
+}
+
 .actions{
   display:flex;
   gap:6px;
@@ -441,6 +446,8 @@ th{
     </div>
 
     <p>Enter today's attendance.</p>
+
+    <div id="dutyStatusBadge" class="status pending" style="display:none;margin-bottom:12px;"></div>
 
     <div class="grid">
 
@@ -1414,6 +1421,8 @@ function restoreOpenRecord(record){
 
   if(record.outTime){
 
+    setDutyStatus(null);
+
     showEmployeeMessage(
       "You already checked in and out for " +
       record.date +
@@ -1421,6 +1430,8 @@ function restoreOpenRecord(record){
     );
 
   }else{
+
+    setDutyStatus("on");
 
     showEmployeeMessage(
       "You're still checked in since " +
@@ -1538,6 +1549,8 @@ async function checkIn(){
 
       }
 
+      setDutyStatus("on");
+
       showEmployeeMessage(
         "Checked in at " +
         (data.inTime || timeValue) +
@@ -1639,6 +1652,8 @@ async function checkOut(){
       await response.json();
 
     if(data.success){
+
+      setDutyStatus(null);
 
       showEmployeeMessage(
         "Checked out. Tap Submit Attendance to send it for approval."
@@ -1771,6 +1786,44 @@ function resetTimeEntry(){
   document
     .getElementById("checkOutBtn")
     .disabled = false;
+
+  setDutyStatus("off");
+
+}
+
+
+/* DUTY STATUS BADGE
+   "off"  -> Not On Duty (before check-in)
+   "on"   -> On Duty (checked in, not yet checked out)
+   null   -> hide the badge (after check-out, normal attendance
+             details -- Date/In/Out/Hours/OT -- are shown as usual) */
+
+function setDutyStatus(state){
+
+  const badge =
+    document.getElementById("dutyStatusBadge");
+
+  if(!badge){
+    return;
+  }
+
+  if(state === "off"){
+
+    badge.textContent = "Not On Duty";
+    badge.className = "status pending";
+    badge.style.display = "inline-block";
+
+  }else if(state === "on"){
+
+    badge.textContent = "On Duty";
+    badge.className = "status onduty";
+    badge.style.display = "inline-block";
+
+  }else{
+
+    badge.style.display = "none";
+
+  }
 
 }
 
@@ -1911,11 +1964,7 @@ function renderOwnerAttendance(){
   tbody.innerHTML = "";
 
   const records =
-    allData.attendance.filter(function(row){
-
-      return row.status !== "Open";
-
-    });
+    allData.attendance.slice();
 
   if(records.length === 0){
 
@@ -1928,7 +1977,11 @@ function renderOwnerAttendance(){
 
   records.forEach(function(row){
 
+    const isOpenRecord =
+      row.status === "Open";
+
     const isEditing =
+      !isOpenRecord &&
       !!editingRecord &&
       editingRecord.name === row.name &&
       editingRecord.date === row.date;
@@ -2051,6 +2104,23 @@ function renderOwnerAttendance(){
 
       actionCell.appendChild(cancelBtn);
 
+    }else if(isOpenRecord){
+
+      /* Employee is currently checked in but hasn't tapped Submit
+         Attendance yet -- show a view-only "On Duty" row with no
+         Accept/Decline actions, since there's nothing to approve yet. */
+
+      dateCell.textContent = row.date;
+
+      inCell.textContent = row.inTime || "-";
+
+      outCell.textContent = row.outTime || "-";
+
+      statusCell.innerHTML =
+        statusBadge(row.status);
+
+      actionCell.textContent = "-";
+
     }else{
 
       dateCell.textContent = row.date;
@@ -2165,7 +2235,23 @@ async function changeStatus(name,date,status){
 
     if(data.success){
 
-      await loadData();
+      /* Update the already-loaded record in place instead of doing a
+         full loadData() re-fetch of every employee + every attendance
+         row -- this is what made Accept/Decline feel slow. The logic
+         and end result are unchanged, it's just applied locally. */
+
+      const record =
+        allData.attendance.find(function(row){
+
+          return row.name === name && row.date === date;
+
+        });
+
+      if(record){
+
+        record.status = status;
+
+      }
 
       renderOwnerAttendance();
 
@@ -2236,9 +2322,29 @@ async function saveCorrectedAttendance(name,originalDate){
 
     if(data.success){
 
-      editingRecord = null;
+      /* Update the already-loaded record in place instead of doing a
+         full loadData() re-fetch -- same speed fix as changeStatus(),
+         Decline -> Save & Approve logic itself is unchanged. */
 
-      await loadData();
+      const record =
+        allData.attendance.find(function(row){
+
+          return row.name === name && row.date === originalDate;
+
+        });
+
+      if(record){
+
+        record.date = newDate;
+        record.inTime = inTime;
+        record.outTime = outTime;
+        record.hoursWorked = hours.hoursWorked;
+        record.otHours = hours.otHours;
+        record.status = "Approved";
+
+      }
+
+      editingRecord = null;
 
       renderOwnerAttendance();
 
@@ -3303,6 +3409,9 @@ function statusBadge(status){
   let cls =
     "pending";
 
+  let label =
+    status || "Pending";
+
   if(s === "approved"){
     cls = "approved";
   }
@@ -3311,11 +3420,16 @@ function statusBadge(status){
     cls = "declined";
   }
 
+  if(s === "open"){
+    cls = "onduty";
+    label = "On Duty";
+  }
+
   return (
     '<span class="status ' +
     cls +
     '">' +
-    (status || "Pending") +
+    label +
     '</span>'
   );
 

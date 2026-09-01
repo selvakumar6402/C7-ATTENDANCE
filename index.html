@@ -877,28 +877,59 @@ th{
 
     </div>
 
-    <div class="table-wrap">
+    <div class="subcard">
 
-      <table>
+      <h3>View Employee Attendance</h3>
 
-        <thead>
+      <label>Select Employee</label>
 
-          <tr>
-            <th>Employee Name</th>
-            <th>Date</th>
-            <th>In Time</th>
-            <th>Out Time</th>
-            <th>Hours Worked</th>
-            <th>OT Hours</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
+      <select id="ownerViewEmployee" onchange="onOwnerViewEmployeeChange()">
+        <option value="">Select employee</option>
+      </select>
 
-        </thead>
+      <div id="ownerViewEmptyMessage" class="message">
+        Select an employee above to view their attendance.
+      </div>
 
-        <tbody id="ownerTable"></tbody>
+      <div id="ownerViewPanel" class="hidden">
 
-      </table>
+        <div class="row-flex" style="flex-wrap:wrap;margin-top:6px;">
+
+          <h3 id="ownerViewEmployeeName" style="margin:0;"></h3>
+
+          <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;"></div>
+
+        </div>
+
+        <div class="table-wrap">
+
+          <table>
+
+            <thead>
+
+              <tr>
+                <th>Date</th>
+                <th>In Time</th>
+                <th>Out Time</th>
+                <th>Hours Worked</th>
+                <th>OT Hours</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="ownerTable"></tbody>
+
+          </table>
+
+        </div>
+
+        <p style="text-align:right;font-weight:bold;margin-top:10px;">
+          Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
+        </p>
+
+      </div>
 
     </div>
 
@@ -940,6 +971,12 @@ let editingRecord = null;
 /* Tracks which employee row (by current name) is being edited in
    Owner Settings, or null. */
 let editingEmployee = null;
+
+/* Interval handle for the Owner Dashboard's periodic attendance
+   refresh (see startOwnerAttendancePoll/stopOwnerAttendancePoll),
+   so the selected employee's view picks up new Check-In/Check-Out
+   data automatically without the Owner needing to reload the page. */
+let ownerAttendancePollTimer = null;
 
 
 /* ================= SESSION PERSISTENCE ================= */
@@ -1119,6 +1156,24 @@ function fillEmployeeList(){
 
   }
 
+  /* Owner Dashboard "Select Employee" attendance viewer. We remember
+     the previously selected value so that a background refresh (e.g.
+     after Accept/Edit/Save, or the periodic auto-refresh) does not
+     kick the Owner back to the "select an employee" placeholder. */
+
+  const ownerViewSelect =
+    document.getElementById("ownerViewEmployee");
+
+  const previousOwnerViewValue =
+    ownerViewSelect ? ownerViewSelect.value : "";
+
+  if(ownerViewSelect){
+
+    ownerViewSelect.innerHTML =
+      '<option value="">Select employee</option>';
+
+  }
+
   allData.employees.forEach(function(name){
 
     const option =
@@ -1172,7 +1227,31 @@ function fillEmployeeList(){
 
     }
 
+
+    if(ownerViewSelect){
+
+      const ownerViewOption =
+        document.createElement("option");
+
+      ownerViewOption.value = name;
+
+      ownerViewOption.textContent = name;
+
+      ownerViewSelect.appendChild(ownerViewOption);
+
+    }
+
   });
+
+  if(
+    ownerViewSelect &&
+    previousOwnerViewValue &&
+    allData.employees.indexOf(previousOwnerViewValue) !== -1
+  ){
+
+    ownerViewSelect.value = previousOwnerViewValue;
+
+  }
 
 }
 
@@ -1531,6 +1610,65 @@ function openOwnerScreen(){
     .classList.add("hidden");
 
   editingRecord = null;
+
+  renderOwnerAttendance();
+
+  startOwnerAttendancePoll();
+
+}
+
+
+/* ================= OWNER DASHBOARD AUTO-REFRESH =================
+ * While the Owner is viewing a selected employee's attendance, poll
+ * for fresh data every 20 seconds so Check-In/Check-Out activity from
+ * the employee's own device shows up without the Owner reloading the
+ * page. Skips a tick if no employee is selected yet, or if the Owner
+ * is mid-edit on a record (so a refresh never overwrites what they're
+ * typing). fillEmployeeList() (called by loadData()) already restores
+ * the selected employee afterwards, so the view stays put.
+ */
+
+function startOwnerAttendancePoll(){
+
+  stopOwnerAttendancePoll();
+
+  ownerAttendancePollTimer =
+    setInterval(ownerAttendancePollTick,20000);
+
+}
+
+
+function stopOwnerAttendancePoll(){
+
+  if(ownerAttendancePollTimer){
+
+    clearInterval(ownerAttendancePollTimer);
+
+    ownerAttendancePollTimer = null;
+
+  }
+
+}
+
+
+async function ownerAttendancePollTick(){
+
+  if(!currentOwner){
+    return;
+  }
+
+  const select =
+    document.getElementById("ownerViewEmployee");
+
+  if(!select || !select.value){
+    return;
+  }
+
+  if(editingRecord){
+    return;
+  }
+
+  await loadData();
 
   renderOwnerAttendance();
 
@@ -2025,15 +2163,89 @@ function renderOwnerAttendance(){
   const tbody =
     document.getElementById("ownerTable");
 
+  const emptyMessage =
+    document.getElementById("ownerViewEmptyMessage");
+
+  const panel =
+    document.getElementById("ownerViewPanel");
+
+  const select =
+    document.getElementById("ownerViewEmployee");
+
+  const selectedName =
+    select ? select.value : "";
+
   tbody.innerHTML = "";
 
+  if(!selectedName){
+
+    /* No employee chosen yet -- per spec, the dashboard should NOT
+       show any attendance until the Owner picks someone. */
+
+    if(emptyMessage){
+      emptyMessage.classList.remove("hidden");
+    }
+
+    if(panel){
+      panel.classList.add("hidden");
+    }
+
+    return;
+
+  }
+
+  if(emptyMessage){
+    emptyMessage.classList.add("hidden");
+  }
+
+  if(panel){
+    panel.classList.remove("hidden");
+  }
+
+  document
+    .getElementById("ownerViewEmployeeName")
+    .textContent =
+    selectedName;
+
+  const todayInfo =
+    document.getElementById("ownerViewTodayInfo");
+
+  if(todayInfo){
+    todayInfo.textContent =
+      "Today: " + formatOwnerViewToday();
+  }
+
   const records =
-    allData.attendance.slice();
+    allData.attendance
+      .filter(function(row){
+
+        return row.name === selectedName;
+
+      })
+      .sort(function(a,b){
+
+        if(a.date < b.date){ return -1; }
+
+        if(a.date > b.date){ return 1; }
+
+        return 0;
+
+      });
+
+  const totalOTSpan =
+    document.getElementById("ownerViewTotalOT");
+
+  if(totalOTSpan){
+    totalOTSpan.textContent =
+      computeTotalOTHours(records);
+  }
 
   if(records.length === 0){
 
     tbody.innerHTML =
-      "<tr><td colspan='8'>No attendance records.</td></tr>";
+      "<tr><td colspan='7'>No attendance records for " +
+      selectedName +
+      ".</td></tr>";
 
     return;
 
@@ -2052,12 +2264,6 @@ function renderOwnerAttendance(){
 
     const tr =
       document.createElement("tr");
-
-    const nameCell =
-      document.createElement("td");
-
-    nameCell.textContent =
-      row.name;
 
     const dateCell =
       document.createElement("td");
@@ -2248,8 +2454,6 @@ function renderOwnerAttendance(){
     }
 
 
-    tr.appendChild(nameCell);
-
     tr.appendChild(dateCell);
 
     tr.appendChild(inCell);
@@ -2267,6 +2471,76 @@ function renderOwnerAttendance(){
     tbody.appendChild(tr);
 
   });
+
+}
+
+
+/* Fires when the Owner picks (or clears) an employee in the "Select
+   Employee" dropdown on the dashboard. */
+
+function onOwnerViewEmployeeChange(){
+
+  renderOwnerAttendance();
+
+}
+
+
+/* "Today: <Day>, <DD> <Month> <YYYY> <HH:mm>" -- covers Date, Time
+   and Month in one line, formatted manually (matching the rest of the
+   app's manual HH:mm formatting) so it doesn't depend on the browser's
+   locale settings. */
+
+function formatOwnerViewToday(){
+
+  const days =
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  const months =
+    ["January","February","March","April","May","June",
+     "July","August","September","October","November","December"];
+
+  const now =
+    new Date();
+
+  const dd =
+    String(now.getDate()).padStart(2,"0");
+
+  const hh =
+    String(now.getHours()).padStart(2,"0");
+
+  const mm =
+    String(now.getMinutes()).padStart(2,"0");
+
+  return (
+    days[now.getDay()] + ", " +
+    dd + " " + months[now.getMonth()] + " " + now.getFullYear() +
+    ", " + hh + ":" + mm
+  );
+
+}
+
+
+/* Sums the OT Hours column for the records currently shown for the
+   selected employee. */
+
+function computeTotalOTHours(records){
+
+  let total = 0;
+
+  records.forEach(function(row){
+
+    const value =
+      parseFloat(row.otHours);
+
+    if(!isNaN(value)){
+
+      total += value;
+
+    }
+
+  });
+
+  return total.toFixed(2);
 
 }
 
@@ -3713,6 +3987,8 @@ function logout(){
   editingRecord = null;
 
   editingEmployee = null;
+
+  stopOwnerAttendancePoll();
 
   clearSession();
 

@@ -761,6 +761,46 @@ th{
 
     <div class="subcard">
 
+      <h3>Attendance Download &amp; Delete</h3>
+
+      <label>Employee</label>
+
+      <select id="settingsAttEmployee">
+        <option value="">Select employee</option>
+      </select>
+
+      <div class="grid">
+
+        <div>
+          <label>From Date</label>
+          <input type="date" id="settingsAttFromDate">
+        </div>
+
+        <div>
+          <label>To Date</label>
+          <input type="date" id="settingsAttToDate">
+        </div>
+
+      </div>
+
+      <div style="display:flex;gap:10px;">
+
+        <button class="primary" onclick="downloadAttendanceFromSettings()">
+          Download
+        </button>
+
+        <button class="danger" onclick="deleteAttendanceFromSettings()">
+          Delete
+        </button>
+
+      </div>
+
+      <div id="settingsAttMessage"></div>
+
+    </div>
+
+    <div class="subcard">
+
       <h3>Change My PIN</h3>
 
       <p style="font-size:13px;color:#596273;">Logged in as <b id="ownerSettingsName"></b></p>
@@ -801,8 +841,8 @@ th{
     <h2>Attendance Records</h2>
 
     <p style="font-size:13px;color:#596273;">
-      Tip: if a record needs a correction, tap <b>Decline</b> to edit the
-      Date, Check-In and Check-Out times, then tap <b>Save &amp; Approve</b>.
+      Tip: if a record needs a correction, tap <b>Edit</b> to update the
+      Check-In and Check-Out times, then tap <b>Save</b>.
     </p>
 
     <div class="subcard">
@@ -1069,6 +1109,16 @@ function fillEmployeeList(){
 
   }
 
+  const settingsAttSelect =
+    document.getElementById("settingsAttEmployee");
+
+  if(settingsAttSelect){
+
+    settingsAttSelect.innerHTML =
+      '<option value="">Select employee</option>';
+
+  }
+
   allData.employees.forEach(function(name){
 
     const option =
@@ -1105,6 +1155,20 @@ function fillEmployeeList(){
       downloadOption.textContent = name;
 
       downloadSelect.appendChild(downloadOption);
+
+    }
+
+
+    if(settingsAttSelect){
+
+      const settingsAttOption =
+        document.createElement("option");
+
+      settingsAttOption.value = name;
+
+      settingsAttOption.textContent = name;
+
+      settingsAttSelect.appendChild(settingsAttOption);
 
     }
 
@@ -2028,17 +2092,12 @@ function renderOwnerAttendance(){
 
     if(isEditing){
 
-      /* Editable Date / In Time / Out Time for the "Decline -> correct" flow */
+      /* Editable In Time / Out Time for the "Edit -> Save" flow.
+         The Date itself is not editable -- it stays fixed to the
+         record's original date, which is also what keeps the Date
+         bug fix intact (no date field means no way to shift it). */
 
-      const dateInput =
-        document.createElement("input");
-
-      dateInput.type = "date";
-      dateInput.id = "editDateInput";
-      dateInput.className = "cell-input";
-      dateInput.value = row.date;
-
-      dateCell.appendChild(dateInput);
+      dateCell.textContent = row.date;
 
 
       const inInput =
@@ -2071,7 +2130,7 @@ function renderOwnerAttendance(){
         document.createElement("button");
 
       saveBtn.className = "success";
-      saveBtn.textContent = "Save & Approve";
+      saveBtn.textContent = "Save";
 
       saveBtn.onclick =
         function(){
@@ -2161,16 +2220,16 @@ function renderOwnerAttendance(){
         "danger";
 
       declineBtn.textContent =
-        "Decline";
+        "Edit";
 
       declineBtn.title =
-        "Correct the Date / Check-In / Check-Out and approve";
+        "Correct the Check-In / Check-Out times and save";
 
       declineBtn.onclick =
         function(){
 
-          /* Instead of rejecting the record, open it up for correction.
-             Nothing is written to the sheet until "Save & Approve". */
+          /* Opens the record up for correction. Nothing is written
+             to the sheet until "Save" is tapped. */
 
           editingRecord = {
             name: row.name,
@@ -2272,12 +2331,9 @@ async function changeStatus(name,date,status){
 }
 
 
-/* SAVE CORRECTED ATTENDANCE (Decline -> edit -> Save & Approve) */
+/* SAVE CORRECTED ATTENDANCE (Edit -> Save) */
 
 async function saveCorrectedAttendance(name,originalDate){
-
-  const newDate =
-    document.getElementById("editDateInput").value;
 
   const inTime =
     document.getElementById("editInTimeInput").value;
@@ -2285,10 +2341,10 @@ async function saveCorrectedAttendance(name,originalDate){
   const outTime =
     document.getElementById("editOutTimeInput").value;
 
-  if(!newDate || !inTime || !outTime){
+  if(!inTime || !outTime){
 
     alert(
-      "Please fill Date, In Time and Out Time."
+      "Please fill In Time and Out Time."
     );
 
     return;
@@ -2308,7 +2364,7 @@ async function saveCorrectedAttendance(name,originalDate){
           action:"correctAttendance",
           name:name,
           originalDate:originalDate,
-          date:newDate,
+          date:originalDate,
           inTime:inTime,
           outTime:outTime,
           hoursWorked:hours.hoursWorked,
@@ -2324,7 +2380,7 @@ async function saveCorrectedAttendance(name,originalDate){
 
       /* Update the already-loaded record in place instead of doing a
          full loadData() re-fetch -- same speed fix as changeStatus(),
-         Decline -> Save & Approve logic itself is unchanged. */
+         Edit -> Save logic itself is unchanged. */
 
       const record =
         allData.attendance.find(function(row){
@@ -2335,7 +2391,6 @@ async function saveCorrectedAttendance(name,originalDate){
 
       if(record){
 
-        record.date = newDate;
         record.inTime = inTime;
         record.outTime = outTime;
         record.hoursWorked = hours.hoursWorked;
@@ -3391,6 +3446,217 @@ function showOwnerDownloadMessage(text){
 
   const el =
     document.getElementById("ownerDownloadMessage");
+
+  el.innerHTML =
+    text ? '<div class="message">' + text + '</div>' : "";
+
+}
+
+
+/* ================= ATTENDANCE DOWNLOAD & DELETE (Owner Settings) =================
+ * Separate from the existing "Download Attendance" card on the Owner
+ * Dashboard (which is untouched). This one lives in Owner Settings,
+ * always requires a specific employee to be selected, and additionally
+ * supports deleting that employee's records within the chosen date
+ * range only, after an explicit confirmation.
+ */
+
+function downloadAttendanceFromSettings(){
+
+  const name =
+    document.getElementById("settingsAttEmployee").value;
+
+  const from =
+    document.getElementById("settingsAttFromDate").value;
+
+  const to =
+    document.getElementById("settingsAttToDate").value;
+
+  if(!name){
+
+    showSettingsAttMessage("Please select an employee.");
+
+    return;
+
+  }
+
+  if(!from || !to){
+
+    showSettingsAttMessage("Please select both From Date and To Date.");
+
+    return;
+
+  }
+
+  if(from > to){
+
+    showSettingsAttMessage("From Date cannot be after To Date.");
+
+    return;
+
+  }
+
+  const confirmed =
+    confirm(
+      "Do you want to download attendance from " +
+      from +
+      " to " +
+      to +
+      "?"
+    );
+
+  if(!confirmed){
+
+    return;
+
+  }
+
+  const records =
+    allData.attendance.filter(function(row){
+
+      return row.name === name && row.status !== "Open";
+
+    });
+
+  const filtered =
+    filterByDateRange(records,from,to);
+
+  if(filtered.length === 0){
+
+    showSettingsAttMessage(
+      "No attendance records found for the selected date range."
+    );
+
+    return;
+
+  }
+
+  downloadCSV(
+    filtered,
+    name.replace(/[^a-z0-9]/gi,"_") +
+    "_attendance_" + from + "_to_" + to + ".csv"
+  );
+
+  showSettingsAttMessage("");
+
+}
+
+
+async function deleteAttendanceFromSettings(){
+
+  const name =
+    document.getElementById("settingsAttEmployee").value;
+
+  const from =
+    document.getElementById("settingsAttFromDate").value;
+
+  const to =
+    document.getElementById("settingsAttToDate").value;
+
+  if(!name){
+
+    showSettingsAttMessage("Please select an employee.");
+
+    return;
+
+  }
+
+  if(!from || !to){
+
+    showSettingsAttMessage("Please select both From Date and To Date.");
+
+    return;
+
+  }
+
+  if(from > to){
+
+    showSettingsAttMessage("From Date cannot be after To Date.");
+
+    return;
+
+  }
+
+  const confirmed =
+    confirm(
+      "Do you want to delete attendance from " +
+      from +
+      " to " +
+      to +
+      "?"
+    );
+
+  if(!confirmed){
+
+    return;
+
+  }
+
+  showSettingsAttMessage("Deleting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"deleteAttendanceRange",
+          name:name,
+          fromDate:from,
+          toDate:to
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      /* Remove only this employee's records within this exact date
+         range from the already-loaded data, then re-render -- no full
+         reload needed, mirroring the Accept/Decline speed fix. */
+
+      allData.attendance =
+        allData.attendance.filter(function(row){
+
+          return !(
+            row.name === name &&
+            row.date >= from &&
+            row.date <= to
+          );
+
+        });
+
+      showSettingsAttMessage(
+        "Attendance deleted successfully."
+      );
+
+      renderOwnerAttendance();
+
+    }else{
+
+      showSettingsAttMessage(
+        data.message || "Could not delete attendance."
+      );
+
+    }
+
+  }catch(error){
+
+    showSettingsAttMessage(
+      "Could not delete attendance. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showSettingsAttMessage(text){
+
+  const el =
+    document.getElementById("settingsAttMessage");
 
   el.innerHTML =
     text ? '<div class="message">' + text + '</div>' : "";

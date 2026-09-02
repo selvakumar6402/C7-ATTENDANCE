@@ -3517,20 +3517,35 @@ function renderOwnerHeaderDateTime(){
 
 
 /* Sums the OT Hours column for the records currently shown for the
-   selected employee. */
+   selected employee.
+
+   IMPORTANT (fix): This must reflect each DAY's combined OT, not the
+   sum of each individual shift's own OT. A shift's own otHours is
+   computed against a 10-hour threshold in isolation (see
+   computeHours()), so two shifts on the same day (e.g. 3 hrs + 11 hrs)
+   would otherwise under-report OT (0 + 1 = 1) instead of the correct
+   combined-day OT (14 - 10 = 4). Grouping by date first and reusing
+   computeGroupTotals() (already used for the "Daily Total" row) fixes
+   this without touching the shift-wise calculation itself. */
 
 function computeTotalOTHours(records){
 
   let total = 0;
 
-  records.forEach(function(row){
+  const groups =
+    groupRecordsByDate(records);
 
-    const value =
-      parseFloat(row.otHours);
+  groups.forEach(function(group){
 
-    if(!isNaN(value)){
+    const dayTotals =
+      computeGroupTotals(group.rows);
 
-      total += value;
+    const dayOT =
+      parseFloat(dayTotals.otHours);
+
+    if(!isNaN(dayOT)){
+
+      total += dayOT;
 
     }
 

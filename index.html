@@ -170,11 +170,74 @@ th{
   height:22px;
   padding:0 6px;
   border-radius:11px;
-  background:#25d366;
+  background:#c0311a;
   color:white;
   font-size:12px;
   font-weight:bold;
   line-height:1;
+}
+
+.tile-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-top:4px;
+}
+
+.tile{
+  position:relative;
+  background:white;
+  border-radius:16px;
+  padding:22px 14px;
+  text-align:center;
+  box-shadow:0 3px 15px rgba(0,0,0,.08);
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:120px;
+  border:0;
+  font-family:inherit;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+
+.tile:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(0,0,0,.12);
+}
+
+.tile:active{
+  transform:translateY(0);
+}
+
+.tile-icon{
+  font-size:32px;
+  line-height:1;
+}
+
+.tile-title{
+  font-weight:bold;
+  font-size:15px;
+  color:#1e293b;
+  line-height:1.3;
+}
+
+.tile-badge{
+  position:absolute;
+  top:10px;
+  right:10px;
+}
+
+.back-btn{
+  margin-bottom:14px;
+}
+
+@media(min-width:700px){
+  .tile-grid{
+    grid-template-columns:repeat(4,1fr);
+  }
 }
 
 .actions{
@@ -777,8 +840,43 @@ th{
   </div>
 
 
-  <!-- BOX 1: VIEW EMPLOYEE ATTENDANCE -->
-  <div class="card">
+  <!-- OWNER DASHBOARD CATEGORY GRID (tap a tile to open its section) -->
+  <div id="ownerCategoryGrid">
+
+    <div class="tile-grid">
+
+      <button type="button" class="tile" onclick="openOwnerSection(1)">
+        <div class="tile-icon">🗓️</div>
+        <div class="tile-title">View Employee Attendance</div>
+      </button>
+
+      <button type="button" class="tile" onclick="openOwnerSection(2)">
+        <div class="tile-icon">⬇️</div>
+        <div class="tile-title">Attendance Download &amp; Delete</div>
+      </button>
+
+      <button type="button" class="tile" onclick="openOwnerSection(3)">
+        <div class="tile-icon">📝</div>
+        <div class="tile-title">Manual Check-In / Check-Out Requests</div>
+        <span id="manualReqTileBadge" class="badge tile-badge hidden">0</span>
+      </button>
+
+      <button type="button" class="tile" onclick="openOwnerSection(4)">
+        <div class="tile-icon">👥</div>
+        <div class="tile-title">Employee Management</div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- SECTION 1: VIEW EMPLOYEE ATTENDANCE -->
+  <div id="ownerSection1" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
 
     <h2>View Employee Attendance</h2>
 
@@ -840,8 +938,12 @@ th{
   </div>
 
 
-  <!-- BOX 2: ATTENDANCE DOWNLOAD & DELETE -->
-  <div class="card">
+  <!-- SECTION 2: ATTENDANCE DOWNLOAD & DELETE -->
+  <div id="ownerSection2" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
 
     <h2>Attendance Download &amp; Delete</h2>
 
@@ -920,8 +1022,12 @@ th{
   </div>
 
 
-  <!-- BOX 3: MANUAL CHECK-IN / CHECK-OUT REQUESTS -->
-  <div class="card">
+  <!-- SECTION 3: MANUAL CHECK-IN / CHECK-OUT REQUESTS -->
+  <div id="ownerSection3" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
 
     <div class="row-flex" style="justify-content:flex-start;gap:10px;">
 
@@ -942,8 +1048,12 @@ th{
   </div>
 
 
-  <!-- BOX 4: EMPLOYEE MANAGEMENT -->
-  <div class="card">
+  <!-- SECTION 4: EMPLOYEE MANAGEMENT -->
+  <div id="ownerSection4" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
 
     <h2>Employee Management</h2>
 
@@ -1915,7 +2025,63 @@ function openOwnerScreen(){
 
   renderEmployeeSettingsList();
 
+  showOwnerCategoryGrid();
+
   startOwnerAttendancePoll();
+
+}
+
+
+/* ================= OWNER DASHBOARD CATEGORY NAVIGATION =================
+ * The dashboard opens on 4 large tappable category tiles; tapping one
+ * hides the tile grid and shows that section's existing content in
+ * full (same elements/ids/functions as before -- only where they're
+ * displayed has changed). "← Back" on each section returns to the
+ * tile grid. Nothing here touches what each section does.
+ */
+
+function showOwnerCategoryGrid(){
+
+  const grid =
+    document.getElementById("ownerCategoryGrid");
+
+  if(grid){
+    grid.classList.remove("hidden");
+  }
+
+  for(let i = 1; i <= 4; i++){
+
+    const section =
+      document.getElementById("ownerSection" + i);
+
+    if(section){
+      section.classList.add("hidden");
+    }
+
+  }
+
+}
+
+
+function openOwnerSection(sectionNumber){
+
+  const grid =
+    document.getElementById("ownerCategoryGrid");
+
+  if(grid){
+    grid.classList.add("hidden");
+  }
+
+  for(let i = 1; i <= 4; i++){
+
+    const section =
+      document.getElementById("ownerSection" + i);
+
+    if(section){
+      section.classList.toggle("hidden",i !== sectionNumber);
+    }
+
+  }
 
 }
 
@@ -3043,8 +3209,17 @@ function renderManualRequests(){
 
 function updateManualReqBadge(count){
 
+  applyBadgeCount("manualReqBadge",count);
+
+  applyBadgeCount("manualReqTileBadge",count);
+
+}
+
+
+function applyBadgeCount(elementId,count){
+
   const badge =
-    document.getElementById("manualReqBadge");
+    document.getElementById(elementId);
 
   if(!badge){
     return;

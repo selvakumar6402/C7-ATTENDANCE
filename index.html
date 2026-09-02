@@ -162,6 +162,21 @@ th{
   color:#1e40af;
 }
 
+.badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:22px;
+  height:22px;
+  padding:0 6px;
+  border-radius:11px;
+  background:#25d366;
+  color:white;
+  font-size:12px;
+  font-weight:bold;
+  line-height:1;
+}
+
 .actions{
   display:flex;
   gap:6px;
@@ -692,105 +707,115 @@ th{
 <!-- OWNER SCREEN -->
 <div id="ownerScreen" class="hidden">
 
+  <!-- OWNER DASHBOARD HEADER -->
   <div class="card">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="row-flex" style="align-items:flex-start;flex-wrap:wrap;">
 
       <div>
 
-        <h2>Owner Dashboard</h2>
+        <h1 id="ownerWelcomeHeading" style="margin:0;font-size:28px;"></h1>
 
-        <p>View and manage employee attendance.</p>
+        <p style="margin:4px 0 0;">View and manage employee attendance.</p>
 
       </div>
 
-      <button
-        class="secondary"
-        onclick="openOwnerSettings()"
-        title="Settings"
-      >
-        ⚙️
-      </button>
+      <div style="text-align:right;">
+
+        <div id="ownerHeaderDateTime" style="font-size:13px;color:#596273;"></div>
+
+        <button
+          class="secondary"
+          onclick="openOwnerSettings()"
+          title="Change PIN"
+          style="margin-top:8px;"
+        >
+          ⚙️ Change PIN
+        </button>
+
+      </div>
 
     </div>
 
   </div>
 
 
-  <!-- OWNER SETTINGS -->
+  <!-- OWNER SETTINGS (Change PIN only -- Employee Management now lives in
+       its own always-visible Box 3 below, per the dashboard reorg) -->
   <div id="ownerSettings" class="card hidden">
 
-    <h2>⚙️ Owner Settings</h2>
+    <h2>⚙️ Change My PIN</h2>
 
-    <p>Manage your owner account settings.</p>
+    <p style="font-size:13px;color:#596273;">Logged in as <b id="ownerSettingsName"></b></p>
+
+    <label>Current PIN</label>
+
+    <input id="ownerChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
+
+    <label>New PIN</label>
+
+    <input id="ownerChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+    <label>Confirm New PIN</label>
+
+    <input id="ownerChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+    <button class="success" onclick="submitOwnerChangePin()">
+      Update PIN
+    </button>
+
+    <div id="ownerChangePinMessage"></div>
+
+    <button
+      class="secondary"
+      style="margin-top:16px;"
+      onclick="closeOwnerSettings()"
+    >
+      Back
+    </button>
+
+  </div>
+
+
+  <!-- BOX 1: VIEW ATTENDANCE REPORT -->
+  <div class="card">
+
+    <h2>View Attendance Report</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      Tip: if a record needs a correction, tap <b>Edit</b> to update the
+      Check-In and Check-Out times, then tap <b>Save</b>.
+    </p>
 
     <div class="subcard">
 
-      <h3>Employee Management</h3>
-
-      <p>Add, edit, or remove employees. Maximum 10 employees allowed.</p>
-
-      <div id="employeeLimitMessage"></div>
+      <h3>Download Attendance</h3>
 
       <div class="grid">
 
         <div>
-
-          <label>Employee Name</label>
-
-          <input
-            type="text"
-            id="newEmployeeName"
-            placeholder="Enter employee name"
-          >
-
+          <label>From Date</label>
+          <input type="date" id="ownerFromDate">
         </div>
-
 
         <div>
-
-          <label>4 Digit PIN</label>
-
-          <input
-            type="password"
-            id="newEmployeePin"
-            inputmode="numeric"
-            maxlength="4"
-            placeholder="Enter PIN"
-          >
-
+          <label>To Date</label>
+          <input type="date" id="ownerToDate">
         </div>
 
       </div>
 
-      <button
-        class="success"
-        id="addEmployeeBtn"
-        onclick="addEmployeeFromSettings()"
-      >
-        Add Employee
+      <label>Employee</label>
+
+      <select id="ownerDownloadEmployee">
+        <option value="">All Employees</option>
+      </select>
+
+      <button class="primary" onclick="downloadOwnerAttendance()">
+        Download CSV
       </button>
 
-      <div id="employeeSettingsMessage"></div>
-
-      <div class="table-wrap">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Employee Name</th>
-              <th>Action</th>
-            </tr>
-
-          </thead>
-
-          <tbody id="employeeSettingsTable"></tbody>
-
-        </table>
-
-      </div>
+      <div id="ownerDownloadMessage"></div>
 
     </div>
 
@@ -831,99 +856,6 @@ th{
       </div>
 
       <div id="settingsAttMessage"></div>
-
-    </div>
-
-    <div class="subcard">
-
-      <h3>Change My PIN</h3>
-
-      <p style="font-size:13px;color:#596273;">Logged in as <b id="ownerSettingsName"></b></p>
-
-      <label>Current PIN</label>
-
-      <input id="ownerChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
-
-      <label>New PIN</label>
-
-      <input id="ownerChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
-
-      <label>Confirm New PIN</label>
-
-      <input id="ownerChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
-
-      <button class="success" onclick="submitOwnerChangePin()">
-        Update PIN
-      </button>
-
-      <div id="ownerChangePinMessage"></div>
-
-    </div>
-
-    <button
-      class="secondary"
-      style="margin-top:16px;"
-      onclick="closeOwnerSettings()"
-    >
-      Back
-    </button>
-
-  </div>
-
-
-  <div class="card">
-
-    <h2>Manual Check-In / Check-Out Requests</h2>
-
-    <p style="font-size:13px;color:#596273;">
-      Employees can submit a forgotten Check-In/Check-Out from their
-      Settings. Tap <b>Edit</b> to correct the times if needed, then tap
-      <b>Approve / Save</b> to add them to attendance.
-    </p>
-
-    <div id="manualRequestsList"></div>
-
-  </div>
-
-
-  <div class="card">
-
-    <h2>Attendance Records</h2>
-
-    <p style="font-size:13px;color:#596273;">
-      Tip: if a record needs a correction, tap <b>Edit</b> to update the
-      Check-In and Check-Out times, then tap <b>Save</b>.
-    </p>
-
-    <div class="subcard">
-
-      <h3>Download Attendance</h3>
-
-      <div class="grid">
-
-        <div>
-          <label>From Date</label>
-          <input type="date" id="ownerFromDate">
-        </div>
-
-        <div>
-          <label>To Date</label>
-          <input type="date" id="ownerToDate">
-        </div>
-
-      </div>
-
-      <label>Employee</label>
-
-      <select id="ownerDownloadEmployee">
-        <option value="">All Employees</option>
-      </select>
-
-      <button class="primary" onclick="downloadOwnerAttendance()">
-        Download CSV
-      </button>
-
-      <div id="ownerDownloadMessage"></div>
 
     </div>
 
@@ -980,6 +912,102 @@ th{
         </p>
 
       </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- BOX 2: MANUAL CHECK-IN / CHECK-OUT REQUESTS -->
+  <div class="card">
+
+    <div class="row-flex" style="justify-content:flex-start;gap:10px;">
+
+      <h2 style="margin:0;">Manual Check-In / Check-Out Requests</h2>
+
+      <span id="manualReqBadge" class="badge hidden">0</span>
+
+    </div>
+
+    <p style="font-size:13px;color:#596273;">
+      Employees can submit a forgotten Check-In/Check-Out from their
+      Settings. Tap <b>Edit</b> to correct the times if needed, then tap
+      <b>Approve / Save</b> to add them to attendance.
+    </p>
+
+    <div id="manualRequestsList"></div>
+
+  </div>
+
+
+  <!-- BOX 3: EMPLOYEE MANAGEMENT -->
+  <div class="card">
+
+    <h2>Employee Management</h2>
+
+    <p>Add, edit, or remove employees. Maximum 10 employees allowed.</p>
+
+    <div id="employeeLimitMessage"></div>
+
+    <div class="grid">
+
+      <div>
+
+        <label>Employee Name</label>
+
+        <input
+          type="text"
+          id="newEmployeeName"
+          placeholder="Enter employee name"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label>4 Digit PIN</label>
+
+        <input
+          type="password"
+          id="newEmployeePin"
+          inputmode="numeric"
+          maxlength="4"
+          placeholder="Enter PIN"
+        >
+
+      </div>
+
+    </div>
+
+    <button
+      class="success"
+      id="addEmployeeBtn"
+      onclick="addEmployeeFromSettings()"
+    >
+      Add Employee
+    </button>
+
+    <div id="employeeSettingsMessage"></div>
+
+    <h3 style="margin-top:20px;">Employee Records</h3>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Employee Name</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="employeeSettingsTable"></tbody>
+
+      </table>
 
     </div>
 
@@ -1105,10 +1133,6 @@ function openOwnerSettings(){
     .getElementById("ownerSettingsName")
     .textContent = currentOwner;
 
-  editingEmployee = null;
-
-  renderEmployeeSettingsList();
-
 }
 
 
@@ -1117,8 +1141,6 @@ function closeOwnerSettings(){
   document
     .getElementById("ownerSettings")
     .classList.add("hidden");
-
-  editingEmployee = null;
 
 }
 
@@ -1873,13 +1895,23 @@ function openOwnerScreen(){
     .getElementById("ownerSettings")
     .classList.add("hidden");
 
+  document
+    .getElementById("ownerWelcomeHeading")
+    .textContent = "Welcome, " + currentOwner;
+
+  renderOwnerHeaderDateTime();
+
   editingRecord = null;
 
   editingManualRequestId = null;
 
+  editingEmployee = null;
+
   renderOwnerAttendance();
 
   renderManualRequests();
+
+  renderEmployeeSettingsList();
 
   startOwnerAttendancePoll();
 
@@ -1926,13 +1958,17 @@ async function ownerAttendancePollTick(){
     return;
   }
 
-  if(editingRecord || editingManualRequestId){
+  renderOwnerHeaderDateTime();
+
+  if(editingRecord || editingManualRequestId || editingEmployee){
     return;
   }
 
   await loadData();
 
   renderManualRequests();
+
+  renderEmployeeSettingsList();
 
   const select =
     document.getElementById("ownerViewEmployee");
@@ -2844,6 +2880,8 @@ function renderManualRequests(){
   const requests =
     allData.manualRequests || [];
 
+  updateManualReqBadge(requests.length);
+
   if(requests.length === 0){
 
     container.innerHTML =
@@ -2991,6 +3029,36 @@ function renderManualRequests(){
     container.appendChild(card);
 
   });
+
+}
+
+
+/* WhatsApp-style unread-style count badge on Box 2's title, showing
+   how many manual requests are currently pending. Updates every time
+   renderManualRequests() runs (initial login, after Approve/Save, and
+   on each auto-refresh poll tick), so it always reflects the current
+   pending count. */
+
+function updateManualReqBadge(count){
+
+  const badge =
+    document.getElementById("manualReqBadge");
+
+  if(!badge){
+    return;
+  }
+
+  if(count > 0){
+
+    badge.textContent = String(count);
+
+    badge.classList.remove("hidden");
+
+  }else{
+
+    badge.classList.add("hidden");
+
+  }
 
 }
 
@@ -3190,6 +3258,22 @@ function formatOwnerViewToday(){
     dd + " " + months[now.getMonth()] + " " + now.getFullYear() +
     ", " + hh + ":" + mm
   );
+
+}
+
+
+/* Top-right dashboard header stamp -- Day, Date, Month, Year and Time,
+   reusing the exact same formatting as the per-employee "Today:" line
+   in Box 1 above, just written into the header instead. */
+
+function renderOwnerHeaderDateTime(){
+
+  const el =
+    document.getElementById("ownerHeaderDateTime");
+
+  if(el){
+    el.textContent = formatOwnerViewToday();
+  }
 
 }
 
@@ -3723,7 +3807,7 @@ async function deleteEmployeeFromSettings(name){
 
   const confirmed =
     confirm(
-      "Remove " + name + "? This cannot be undone."
+      "Do you want to delete this employee? (" + name + ") This cannot be undone."
     );
 
   if(!confirmed){

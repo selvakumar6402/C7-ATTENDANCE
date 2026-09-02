@@ -3609,33 +3609,35 @@ function groupRecordsByDate(records){
 }
 
 
-/* Sums Hours Worked and OT Hours across a group of same-date shift
-   rows. Non-numeric values (e.g. "-" for an incomplete Open shift)
-   are simply skipped, same as computeTotalOTHours() does. */
+/* Sums Hours Worked across a group of same-date shift rows, then
+   derives OT Hours from that DAILY TOTAL (not by summing each
+   shift's individually-computed OT). This matches the existing
+   single-shift rule (OT = Hours Worked - 10), just applied once at
+   the day level instead of once per shift.
+   e.g. Shift 1 = 3 hrs, Shift 2 = 11 hrs
+        -> Hours Worked = 14, OT Hours = 14 - 10 = 4
+   Non-numeric values (e.g. "-" for an incomplete Open shift) are
+   simply skipped, same as computeTotalOTHours() does. Each shift's
+   own row/values are completely untouched -- this only affects the
+   "Daily Total" summary row. */
 
 function computeGroupTotals(groupRows){
 
   let hours = 0;
-
-  let ot = 0;
 
   groupRows.forEach(function(row){
 
     const h =
       parseFloat(row.hoursWorked);
 
-    const o =
-      parseFloat(row.otHours);
-
     if(!isNaN(h)){
       hours += h;
     }
 
-    if(!isNaN(o)){
-      ot += o;
-    }
-
   });
+
+  const ot =
+    Math.max(0,hours - 10);
 
   return {
     hoursWorked: hours.toFixed(2),

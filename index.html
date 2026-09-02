@@ -2661,11 +2661,21 @@ function renderEmployeeAttendance(){
   tbody.innerHTML = "";
 
   const records =
-    allData.attendance.filter(function(row){
+    allData.attendance
+      .filter(function(row){
 
-      return row.name === currentEmployee && row.status !== "Open";
+        return row.name === currentEmployee && row.status !== "Open";
 
-    });
+      })
+      .sort(function(a,b){
+
+        if(a.date < b.date){ return -1; }
+
+        if(a.date > b.date){ return 1; }
+
+        return 0;
+
+      });
 
   if(records.length === 0){
 
@@ -2676,20 +2686,54 @@ function renderEmployeeAttendance(){
 
   }
 
-  records.forEach(function(row){
+  const dateGroups =
+    groupRecordsByDate(records);
 
-    const tr =
-      document.createElement("tr");
+  dateGroups.forEach(function(group){
 
-    tr.innerHTML =
-      "<td>" + row.date + "</td>" +
-      "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
-      "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
-      "<td>" + (row.hoursWorked || "-") + "</td>" +
-      "<td>" + (row.otHours || "-") + "</td>" +
-      "<td>" + statusBadge(row.status) + "</td>";
+    group.rows.forEach(function(row){
 
-    tbody.appendChild(tr);
+      const tr =
+        document.createElement("tr");
+
+      tr.innerHTML =
+        "<td>" + row.date + "</td>" +
+        "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
+        "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
+        "<td>" + (row.hoursWorked || "-") + "</td>" +
+        "<td>" + (row.otHours || "-") + "</td>" +
+        "<td>" + statusBadge(row.status) + "</td>";
+
+      tbody.appendChild(tr);
+
+    });
+
+    /* Multiple shifts on the same date: each stays its own row above
+       (never merged/overwritten) -- this just adds one extra
+       read-only summary row with that date's combined Hours Worked
+       and OT Hours, whenever there's more than one shift to add up. */
+
+    if(group.rows.length >= 2){
+
+      const totals =
+        computeGroupTotals(group.rows);
+
+      const totalRow =
+        document.createElement("tr");
+
+      totalRow.style.fontWeight = "bold";
+      totalRow.style.background = "#f7f8fa";
+
+      totalRow.innerHTML =
+        "<td colspan='3' style='text-align:right;'>Daily Total (" +
+        group.rows.length + " shifts)</td>" +
+        "<td>" + totals.hoursWorked + "</td>" +
+        "<td>" + totals.otHours + "</td>" +
+        "<td></td>";
+
+      tbody.appendChild(totalRow);
+
+    }
 
   });
 
@@ -2791,7 +2835,12 @@ function renderOwnerAttendance(){
 
   }
 
-  records.forEach(function(row){
+  const dateGroups =
+    groupRecordsByDate(records);
+
+  dateGroups.forEach(function(group){
+
+  group.rows.forEach(function(row){
 
     const isOpenRecord =
       row.status === "Open";
@@ -2799,8 +2848,11 @@ function renderOwnerAttendance(){
     const isEditing =
       !isOpenRecord &&
       !!editingRecord &&
-      editingRecord.name === row.name &&
-      editingRecord.date === row.date;
+      (
+        editingRecord.rowId != null
+          ? editingRecord.rowId === row.rowId
+          : (editingRecord.name === row.name && editingRecord.date === row.date)
+      );
 
     const tr =
       document.createElement("tr");
@@ -2883,7 +2935,8 @@ function renderOwnerAttendance(){
 
           saveCorrectedAttendance(
             row.name,
-            row.date
+            row.date,
+            row.rowId
           );
 
         };
@@ -2953,7 +3006,8 @@ function renderOwnerAttendance(){
           changeStatus(
             row.name,
             row.date,
-            "Approved"
+            "Approved",
+            row.rowId
           );
 
         };
@@ -2979,7 +3033,8 @@ function renderOwnerAttendance(){
 
           editingRecord = {
             name: row.name,
-            date: row.date
+            date: row.date,
+            rowId: row.rowId
           };
 
           renderOwnerAttendance();
@@ -3009,6 +3064,58 @@ function renderOwnerAttendance(){
     tr.appendChild(actionCell);
 
     tbody.appendChild(tr);
+
+  });
+
+  /* Multiple shifts on the same date: each shift stays its own row
+     above (never merged/overwritten) -- this just adds one extra
+     read-only summary row showing that date's combined Hours Worked
+     and OT Hours, whenever there's more than one shift to add up. */
+
+  if(group.rows.length >= 2){
+
+    const totals =
+      computeGroupTotals(group.rows);
+
+    const totalRow =
+      document.createElement("tr");
+
+    totalRow.style.fontWeight = "bold";
+    totalRow.style.background = "#f7f8fa";
+
+    const labelCell =
+      document.createElement("td");
+
+    labelCell.colSpan = 3;
+    labelCell.style.textAlign = "right";
+    labelCell.textContent =
+      "Daily Total (" + group.rows.length + " shifts)";
+
+    const hoursCell =
+      document.createElement("td");
+
+    hoursCell.textContent = totals.hoursWorked;
+
+    const otCell =
+      document.createElement("td");
+
+    otCell.textContent = totals.otHours;
+
+    const statusCell =
+      document.createElement("td");
+
+    const actionCell =
+      document.createElement("td");
+
+    totalRow.appendChild(labelCell);
+    totalRow.appendChild(hoursCell);
+    totalRow.appendChild(otCell);
+    totalRow.appendChild(statusCell);
+    totalRow.appendChild(actionCell);
+
+    tbody.appendChild(totalRow);
+
+  }
 
   });
 
@@ -3326,30 +3433,16 @@ async function approveManualRequest(requestId,name,date,shiftCount){
 
     if(data.success){
 
-      /* Reflect the newly approved shifts (and removal of the request
-         from the pending queue) in the already-loaded data, same
-         no-full-reload pattern used by Accept/Edit/Save elsewhere. */
+      /* Reload from the server (rather than pushing plain local
+         objects) so the newly approved shift(s) come back with a real
+         rowId (the actual sheet row number) -- important now that an
+         employee can have multiple shifts on the same date, so a
+         subsequent Edit always targets the exact correct shift. The
+         backend already appended one separate Attendance row per
+         shift (never overwriting anything), and already removed this
+         request from the pending queue. */
 
-      shifts.forEach(function(shift){
-
-        allData.attendance.push({
-          name: name,
-          date: date,
-          inTime: shift.inTime,
-          outTime: shift.outTime,
-          hoursWorked: shift.hoursWorked,
-          otHours: shift.otHours,
-          status: "Approved"
-        });
-
-      });
-
-      allData.manualRequests =
-        (allData.manualRequests || []).filter(function(r){
-
-          return r.requestId !== requestId;
-
-        });
+      await loadData();
 
       editingManualRequestId = null;
 
@@ -3480,9 +3573,81 @@ function computeTotalOTHours(records){
 }
 
 
+/* ================= MULTIPLE SHIFTS PER DAY (display grouping) =================
+ * An employee can have more than one attendance shift on the same
+ * date (e.g. a morning shift and an evening shift, each its own
+ * separate attendance row/record -- never merged or overwritten).
+ * This groups an already date-sorted records array into consecutive
+ * same-date groups purely for DISPLAY, so a "Daily Total" summary row
+ * can be shown under any date that has 2+ shifts. It does not change,
+ * merge, or reorder the underlying records in any way.
+ */
+
+function groupRecordsByDate(records){
+
+  const groups = [];
+
+  records.forEach(function(row){
+
+    const lastGroup =
+      groups[groups.length - 1];
+
+    if(lastGroup && lastGroup.date === row.date){
+
+      lastGroup.rows.push(row);
+
+    }else{
+
+      groups.push({ date: row.date, rows: [row] });
+
+    }
+
+  });
+
+  return groups;
+
+}
+
+
+/* Sums Hours Worked and OT Hours across a group of same-date shift
+   rows. Non-numeric values (e.g. "-" for an incomplete Open shift)
+   are simply skipped, same as computeTotalOTHours() does. */
+
+function computeGroupTotals(groupRows){
+
+  let hours = 0;
+
+  let ot = 0;
+
+  groupRows.forEach(function(row){
+
+    const h =
+      parseFloat(row.hoursWorked);
+
+    const o =
+      parseFloat(row.otHours);
+
+    if(!isNaN(h)){
+      hours += h;
+    }
+
+    if(!isNaN(o)){
+      ot += o;
+    }
+
+  });
+
+  return {
+    hoursWorked: hours.toFixed(2),
+    otHours: ot.toFixed(2)
+  };
+
+}
+
+
 /* CHANGE STATUS (plain Accept, no edits needed) */
 
-async function changeStatus(name,date,status){
+async function changeStatus(name,date,status,rowId){
 
   try{
 
@@ -3494,7 +3659,8 @@ async function changeStatus(name,date,status){
           action:"updateStatus",
           name:name,
           date:date,
-          status:status
+          status:status,
+          rowId:rowId
         })
       });
 
@@ -3506,14 +3672,19 @@ async function changeStatus(name,date,status){
       /* Update the already-loaded record in place instead of doing a
          full loadData() re-fetch of every employee + every attendance
          row -- this is what made Accept/Decline feel slow. The logic
-         and end result are unchanged, it's just applied locally. */
+         and end result are unchanged, it's just applied locally.
+         Matched by rowId (the exact sheet row) when available, so an
+         employee with multiple shifts on the same date always gets
+         the correct one updated, never a same-date neighbor. */
 
       const record =
-        allData.attendance.find(function(row){
-
-          return row.name === name && row.date === date;
-
-        });
+        rowId
+          ? allData.attendance.find(function(row){
+              return row.rowId === rowId;
+            })
+          : allData.attendance.find(function(row){
+              return row.name === name && row.date === date;
+            });
 
       if(record){
 
@@ -3542,7 +3713,7 @@ async function changeStatus(name,date,status){
 
 /* SAVE CORRECTED ATTENDANCE (Edit -> Save) */
 
-async function saveCorrectedAttendance(name,originalDate){
+async function saveCorrectedAttendance(name,originalDate,rowId){
 
   const inTime =
     document.getElementById("editInTimeInput").value;
@@ -3578,7 +3749,8 @@ async function saveCorrectedAttendance(name,originalDate){
           outTime:outTime,
           hoursWorked:hours.hoursWorked,
           otHours:hours.otHours,
-          status:"Approved"
+          status:"Approved",
+          rowId:rowId
         })
       });
 
@@ -3589,14 +3761,21 @@ async function saveCorrectedAttendance(name,originalDate){
 
       /* Update the already-loaded record in place instead of doing a
          full loadData() re-fetch -- same speed fix as changeStatus(),
-         Edit -> Save logic itself is unchanged. */
+         Edit -> Save logic itself is unchanged. Matched by rowId (the
+         exact sheet row) when available, so an employee with multiple
+         shifts on the same date always gets the correct one updated,
+         never a same-date neighbor -- the FINAL edited In/Out Time
+         values (whatever is in the inputs right now) are what get
+         saved, exactly as before. */
 
       const record =
-        allData.attendance.find(function(row){
-
-          return row.name === name && row.date === originalDate;
-
-        });
+        rowId
+          ? allData.attendance.find(function(row){
+              return row.rowId === rowId;
+            })
+          : allData.attendance.find(function(row){
+              return row.name === name && row.date === originalDate;
+            });
 
       if(record){
 

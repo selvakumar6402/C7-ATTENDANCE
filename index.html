@@ -727,10 +727,10 @@ th{
         <button
           class="secondary"
           onclick="openOwnerSettings()"
-          title="Change PIN"
+          title="Settings"
           style="margin-top:8px;"
         >
-          ⚙️ Change PIN
+          ⚙️ Settings
         </button>
 
       </div>
@@ -777,15 +777,73 @@ th{
   </div>
 
 
-  <!-- BOX 1: VIEW ATTENDANCE REPORT -->
+  <!-- BOX 1: VIEW EMPLOYEE ATTENDANCE -->
   <div class="card">
 
-    <h2>View Attendance Report</h2>
+    <h2>View Employee Attendance</h2>
 
     <p style="font-size:13px;color:#596273;">
       Tip: if a record needs a correction, tap <b>Edit</b> to update the
       Check-In and Check-Out times, then tap <b>Save</b>.
     </p>
+
+    <label>Select Employee</label>
+
+    <select id="ownerViewEmployee" onchange="onOwnerViewEmployeeChange()">
+      <option value="">Select employee</option>
+    </select>
+
+    <div id="ownerViewEmptyMessage" class="message">
+      Select an employee above to view their attendance.
+    </div>
+
+    <div id="ownerViewPanel" class="hidden">
+
+      <div class="row-flex" style="flex-wrap:wrap;margin-top:6px;">
+
+        <h3 id="ownerViewEmployeeName" style="margin:0;"></h3>
+
+        <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;"></div>
+
+      </div>
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Date</th>
+              <th>In Time</th>
+              <th>Out Time</th>
+              <th>Hours Worked</th>
+              <th>OT Hours</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="ownerTable"></tbody>
+
+        </table>
+
+      </div>
+
+      <p style="text-align:right;font-weight:bold;margin-top:10px;">
+        Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- BOX 2: ATTENDANCE DOWNLOAD & DELETE -->
+  <div class="card">
+
+    <h2>Attendance Download &amp; Delete</h2>
 
     <div class="subcard">
 
@@ -821,7 +879,7 @@ th{
 
     <div class="subcard">
 
-      <h3>Attendance Download &amp; Delete</h3>
+      <h3>Attendance Download &amp; Delete by Employee</h3>
 
       <label>Employee</label>
 
@@ -859,66 +917,10 @@ th{
 
     </div>
 
-    <div class="subcard">
-
-      <h3>View Employee Attendance</h3>
-
-      <label>Select Employee</label>
-
-      <select id="ownerViewEmployee" onchange="onOwnerViewEmployeeChange()">
-        <option value="">Select employee</option>
-      </select>
-
-      <div id="ownerViewEmptyMessage" class="message">
-        Select an employee above to view their attendance.
-      </div>
-
-      <div id="ownerViewPanel" class="hidden">
-
-        <div class="row-flex" style="flex-wrap:wrap;margin-top:6px;">
-
-          <h3 id="ownerViewEmployeeName" style="margin:0;"></h3>
-
-          <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;"></div>
-
-        </div>
-
-        <div class="table-wrap">
-
-          <table>
-
-            <thead>
-
-              <tr>
-                <th>Date</th>
-                <th>In Time</th>
-                <th>Out Time</th>
-                <th>Hours Worked</th>
-                <th>OT Hours</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-
-            </thead>
-
-            <tbody id="ownerTable"></tbody>
-
-          </table>
-
-        </div>
-
-        <p style="text-align:right;font-weight:bold;margin-top:10px;">
-          Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
-        </p>
-
-      </div>
-
-    </div>
-
   </div>
 
 
-  <!-- BOX 2: MANUAL CHECK-IN / CHECK-OUT REQUESTS -->
+  <!-- BOX 3: MANUAL CHECK-IN / CHECK-OUT REQUESTS -->
   <div class="card">
 
     <div class="row-flex" style="justify-content:flex-start;gap:10px;">
@@ -940,7 +942,7 @@ th{
   </div>
 
 
-  <!-- BOX 3: EMPLOYEE MANAGEMENT -->
+  <!-- BOX 4: EMPLOYEE MANAGEMENT -->
   <div class="card">
 
     <h2>Employee Management</h2>

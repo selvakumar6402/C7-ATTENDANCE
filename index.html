@@ -39,7 +39,7 @@ header h2{margin:0}
 }
 
 .login-logo{
-  height:72px;
+  height:84px;
   width:auto;
   border-radius:8px;
 }
@@ -1178,6 +1178,16 @@ let editingManualRequestId = null;
 let empInTimeRaw = "";
 let empOutTimeRaw = "";
 
+/* ================= RAW (decimal) HOURS WORKED STATE =================
+ * The #hoursWorked field on the Employee screen now DISPLAYS Hours
+ * Worked as "H.MM" (hours.minutes, e.g. "8.40" = 8 hours 40 minutes)
+ * instead of decimal hours. The actual decimal-hours value computed
+ * by computeHours() (unchanged) is kept here so calculations and the
+ * backend payload are completely unaffected -- only the on-screen
+ * text changes. #otHours is untouched (still shown/sent as decimal
+ * hours, unchanged), since only Hours Worked display was requested. */
+let empHoursWorkedRaw = "";
+
 
 /* ================= SESSION PERSISTENCE ================= */
 
@@ -2315,7 +2325,7 @@ async function checkOut(){
   calculateHours();
 
   const hoursWorked =
-    document.getElementById("hoursWorked").value;
+    empHoursWorkedRaw;
 
   const otHours =
     document.getElementById("otHours").value;
@@ -2530,6 +2540,44 @@ function computeHours(inTime,outTime){
 }
 
 
+/* ================= HOURS WORKED DISPLAY FORMATTER (display-only) =================
+ * Converts a decimal-hours value (exactly what computeHours() returns,
+ * and what is stored/sent to the backend, unchanged) into "H.MM" text
+ * for ON-SCREEN DISPLAY ONLY -- e.g. "8.67" (8.67 decimal hours =
+ * 8h 40m) -> "8.40". The digits after the dot are real MINUTES here,
+ * never decimal hours. This does not change, re-save, or re-interpret
+ * the actual stored value anywhere -- every calculation (OT threshold,
+ * multi-shift day totals, etc.) keeps using the underlying decimal
+ * value exactly as before; only what's rendered as text changes.
+ * OT Hours is untouched and still shown as decimal, per request. */
+
+function formatHoursDisplay(value){
+
+  if(value === undefined || value === null || value === ""){
+    return "";
+  }
+
+  const decimalHours =
+    parseFloat(value);
+
+  if(isNaN(decimalHours)){
+    return String(value);
+  }
+
+  const totalMinutes =
+    Math.round(decimalHours * 60);
+
+  const hh =
+    Math.floor(totalMinutes / 60);
+
+  const mm =
+    totalMinutes % 60;
+
+  return hh + "." + String(mm).padStart(2,"0");
+
+}
+
+
 /* CALCULATE HOURS (employee check-in/out screen) */
 
 function calculateHours(){
@@ -2541,6 +2589,8 @@ function calculateHours(){
     empOutTimeRaw;
 
   if(!inTime || !outTime){
+
+    empHoursWorkedRaw = "";
 
     document
       .getElementById("hoursWorked")
@@ -2557,10 +2607,13 @@ function calculateHours(){
   const result =
     computeHours(inTime,outTime);
 
+  empHoursWorkedRaw =
+    result.hoursWorked;
+
   document
     .getElementById("hoursWorked")
     .value =
-    result.hoursWorked;
+    formatHoursDisplay(result.hoursWorked);
 
   document
     .getElementById("otHours")
@@ -2581,6 +2634,8 @@ function resetTimeEntry(){
   document
     .getElementById("outTime")
     .value = "";
+
+  empHoursWorkedRaw = "";
 
   document
     .getElementById("hoursWorked")
@@ -2657,7 +2712,7 @@ async function saveAttendance(){
     empOutTimeRaw;
 
   const hoursWorked =
-    document.getElementById("hoursWorked").value;
+    empHoursWorkedRaw;
 
   const otHours =
     document.getElementById("otHours").value;
@@ -2773,7 +2828,7 @@ function renderEmployeeAttendance(){
         "<td>" + formatDateDisplay(row.date) + "</td>" +
         "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
         "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
-        "<td>" + (row.hoursWorked || "-") + "</td>" +
+        "<td>" + (formatHoursDisplay(row.hoursWorked) || "-") + "</td>" +
         "<td>" + (row.otHours || "-") + "</td>" +
         "<td>" + statusBadge(row.status) + "</td>";
 
@@ -2800,7 +2855,7 @@ function renderEmployeeAttendance(){
       totalRow.innerHTML =
         "<td colspan='3' style='text-align:right;'>Daily Total (" +
         group.rows.length + " shifts)</td>" +
-        "<td>" + totals.hoursWorked + "</td>" +
+        "<td>" + formatHoursDisplay(totals.hoursWorked) + "</td>" +
         "<td>" + totals.otHours + "</td>" +
         "<td></td>";
 
@@ -2978,7 +3033,7 @@ function renderOwnerAttendance(){
       document.createElement("td");
 
     hoursCell.textContent =
-      row.hoursWorked || "-";
+      formatHoursDisplay(row.hoursWorked) || "-";
 
     const otCell =
       document.createElement("td");
@@ -3205,7 +3260,7 @@ function renderOwnerAttendance(){
     const hoursCell =
       document.createElement("td");
 
-    hoursCell.textContent = totals.hoursWorked;
+    hoursCell.textContent = formatHoursDisplay(totals.hoursWorked);
 
     const otCell =
       document.createElement("td");

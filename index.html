@@ -533,6 +533,32 @@ th{
 </div>
 
 
+<!-- APP LOCK (Employee has App Lock ON -- ask for PIN again on reopen,
+     without needing full name+PIN login again since the employee is
+     already remembered on this device via the saved session). -->
+<div id="appLockScreen" class="card hidden">
+
+  <h2>🔒 App Locked</h2>
+
+  <p>Welcome back, <b id="appLockName"></b>. Enter your PIN to continue.</p>
+
+  <label>4 Digit PIN</label>
+
+  <input id="appLockPin" type="password" inputmode="numeric" maxlength="4" placeholder="Enter PIN">
+
+  <button class="primary" onclick="submitAppLockPin()">
+    Unlock
+  </button>
+
+  <p style="margin-top:10px;text-align:center;">
+    <button type="button" class="link-btn" onclick="logout()">Not you? Logout</button>
+  </p>
+
+  <div id="appLockMessage"></div>
+
+</div>
+
+
 <!-- EMPLOYEE SCREEN -->
 <div id="employeeScreen" class="hidden">
 
@@ -684,6 +710,23 @@ th{
       </button>
 
       <div id="empChangePinMessage"></div>
+
+    </div>
+
+    <div class="subcard">
+
+      <h3>App Lock</h3>
+
+      <p style="font-size:13px;color:#596273;">
+        When turned on, you'll be asked to enter your PIN every time
+        you open the app, even though your login stays remembered on
+        this phone.
+      </p>
+
+      <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin:6px 0 0;">
+        <input type="checkbox" id="appLockToggle" onchange="toggleAppLock()" style="width:auto;margin:0;">
+        Enable App Lock
+      </label>
 
     </div>
 
@@ -1242,6 +1285,178 @@ function clearSession(){
 }
 
 
+/* ================= APP LOCK (Employee) =================
+ * Optional per-employee, per-device setting. The employee's LOGIN
+ * itself is always remembered via the existing session (see
+ * saveSession/loadSession above) -- that part is unchanged. App Lock
+ * only controls whether reopening the app, on top of that remembered
+ * login, also asks for the PIN again before showing the Dashboard:
+ *   - OFF (default): app opens straight to the Dashboard, exactly as
+ *     before this feature existed.
+ *   - ON: app shows the App Lock screen first; entering the correct
+ *     PIN (checked via the same "employeeLogin" backend action) opens
+ *     the Dashboard. Nothing else about login changes.
+ * Stored in localStorage only, keyed by employee name -- no backend
+ * or Sheet changes needed, and this never applies to the Owner side.
+ */
+
+function appLockKey(name){
+
+  return "c7_attendance_applock_" + String(name || "").trim().toLowerCase();
+
+}
+
+
+function isAppLockEnabled(name){
+
+  try{
+
+    return localStorage.getItem(appLockKey(name)) === "1";
+
+  }catch(error){
+
+    return false;
+
+  }
+
+}
+
+
+function setAppLockEnabled(name,enabled){
+
+  try{
+
+    localStorage.setItem(appLockKey(name),enabled ? "1" : "0");
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+function toggleAppLock(){
+
+  const checkbox =
+    document.getElementById("appLockToggle");
+
+  if(!checkbox){
+    return;
+  }
+
+  setAppLockEnabled(currentEmployee,checkbox.checked);
+
+}
+
+
+/* Shows the App Lock PIN screen for a remembered employee session,
+   instead of opening the Dashboard directly. */
+
+function showAppLockScreen(name){
+
+  document
+    .getElementById("loginScreen")
+    .classList.add("hidden");
+
+  document
+    .getElementById("appLockScreen")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("appLockName")
+    .textContent = name;
+
+  document
+    .getElementById("appLockPin")
+    .value = "";
+
+  showAppLockMessage("");
+
+}
+
+
+/* Verifies the PIN via the same "employeeLogin" backend action already
+   used for normal login (name is already known from the remembered
+   session, so only the PIN needs to be entered here). */
+
+async function submitAppLockPin(){
+
+  const session =
+    loadSession();
+
+  const name =
+    session ? session.name : "";
+
+  const pin =
+    document.getElementById("appLockPin").value;
+
+  if(!name || !pin){
+
+    showAppLockMessage("Please enter your PIN.");
+
+    return;
+
+  }
+
+  showAppLockMessage("Checking...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"employeeLogin",
+          name:name,
+          pin:pin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      currentEmployee = data.name;
+
+      document
+        .getElementById("appLockScreen")
+        .classList.add("hidden");
+
+      openEmployeeScreen();
+
+    }else{
+
+      showAppLockMessage(
+        data.message || "Incorrect PIN."
+      );
+
+    }
+
+  }catch(error){
+
+    showAppLockMessage(
+      "Could not verify PIN. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showAppLockMessage(text){
+
+  document
+    .getElementById("appLockMessage")
+    .innerHTML =
+    text ? '<div class="message">' + text + '</div>' : "";
+
+}
+
+
 /* OWNER SETTINGS */
 
 function openOwnerSettings(){
@@ -1277,6 +1492,13 @@ function openEmployeeSettings(){
   initManualRequestForm();
 
   showManualReqMessage("");
+
+  const appLockToggle =
+    document.getElementById("appLockToggle");
+
+  if(appLockToggle){
+    appLockToggle.checked = isAppLockEnabled(currentEmployee);
+  }
 
 }
 
@@ -5309,6 +5531,10 @@ function logout(){
     .classList.add("hidden");
 
   document
+    .getElementById("appLockScreen")
+    .classList.add("hidden");
+
+  document
     .getElementById("loginScreen")
     .classList.remove("hidden");
 
@@ -5384,9 +5610,17 @@ async function init(){
     })
   ){
 
-    currentEmployee = session.name;
+    if(isAppLockEnabled(session.name)){
 
-    openEmployeeScreen();
+      showAppLockScreen(session.name);
+
+    }else{
+
+      currentEmployee = session.name;
+
+      openEmployeeScreen();
+
+    }
 
   }else if(
     session.type === "owner" &&

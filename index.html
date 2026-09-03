@@ -180,6 +180,11 @@ th{
   color:#1e40af;
 }
 
+.wo{
+  background:#ede9fe;
+  color:#6d28d9;
+}
+
 .badge{
   display:inline-flex;
   align-items:center;
@@ -737,29 +742,62 @@ th{
       <p style="font-size:13px;color:#596273;">
         Forgot to Check-In or Check-Out? Select the date and enter the
         correct times below. Your Owner will review and approve it.
+        Or choose <b>Off Request</b> below to request a day off.
       </p>
 
-      <label>Attendance Date</label>
+      <div class="login-buttons" style="margin-bottom:14px;">
 
-      <input type="date" id="manualReqDate">
-
-      <div id="manualReqShifts"></div>
-
-      <div style="display:flex;gap:10px;margin-bottom:14px;">
-
-        <button type="button" class="secondary" id="manualReqAddShiftBtn" onclick="addManualRequestShiftRow()">
-          + Add Shift
+        <button type="button" class="primary" id="manualReqTypeCheckBtn" onclick="showManualReqTypeCheckInOut()">
+          Check-In / Check-Out
         </button>
 
-        <button type="button" class="secondary" id="manualReqRemoveShiftBtn" onclick="removeLastManualRequestShiftRow()">
-          - Remove Last Shift
+        <button type="button" class="secondary" id="manualReqTypeOffBtn" onclick="showManualReqTypeOff()">
+          Off Request
         </button>
 
       </div>
 
-      <button class="success" onclick="submitManualRequest()">
-        Submit Request
-      </button>
+      <div id="manualReqCheckInOutSection">
+
+        <label>Attendance Date</label>
+
+        <input type="date" id="manualReqDate">
+
+        <div id="manualReqShifts"></div>
+
+        <div style="display:flex;gap:10px;margin-bottom:14px;">
+
+          <button type="button" class="secondary" id="manualReqAddShiftBtn" onclick="addManualRequestShiftRow()">
+            + Add Shift
+          </button>
+
+          <button type="button" class="secondary" id="manualReqRemoveShiftBtn" onclick="removeLastManualRequestShiftRow()">
+            - Remove Last Shift
+          </button>
+
+        </div>
+
+        <button class="success" onclick="submitManualRequest()">
+          Submit Request
+        </button>
+
+      </div>
+
+      <div id="offRequestSection" class="hidden">
+
+        <label>Off Date</label>
+
+        <input type="date" id="offReqDate">
+
+        <label>Reason for Off</label>
+
+        <input type="text" id="offReqReason" placeholder="Reason for Off">
+
+        <button class="success" onclick="submitOffRequest()">
+          Submit Off Request
+        </button>
+
+      </div>
 
       <div id="manualReqMessage"></div>
 
@@ -1076,6 +1114,18 @@ th{
 
     <div id="manualRequestsList"></div>
 
+    <h3 style="margin-top:24px;">Off Requests</h3>
+
+    <p style="font-size:13px;color:#596273;">
+      Employees can request a day off from their Settings. Accept to
+      automatically mark that date as WO (Week Off) in their
+      attendance, or Decline to keep it off their attendance.
+    </p>
+
+    <p id="offReqPendingCount" style="font-weight:bold;font-size:13px;"></p>
+
+    <div id="offRequestsList"></div>
+
   </div>
 
 
@@ -1177,7 +1227,8 @@ const SESSION_KEY = "c7_attendance_session";
 let allData = {
   employees: [],
   attendance: [],
-  manualRequests: []
+  manualRequests: [],
+  offRequests: []
 };
 
 let currentEmployee = "";
@@ -1491,7 +1542,7 @@ function openEmployeeSettings(){
 
   initManualRequestForm();
 
-  showManualReqMessage("");
+  showManualReqTypeCheckInOut();
 
   const appLockToggle =
     document.getElementById("appLockToggle");
@@ -1712,6 +1763,179 @@ function showManualReqMessage(text){
     .getElementById("manualReqMessage")
     .innerHTML =
     text ? '<div class="message">' + text + '</div>' : "";
+
+}
+
+
+/* ================= OFF REQUEST / WEEK OFF (Employee side) =================
+ * A second request type alongside the existing Manual Check-In/Check-
+ * Out Request, in the same Settings subcard. The employee picks a
+ * date and gives a reason; the Owner reviews it (see renderOffRequests
+ * / decideOffRequest on the Owner side). Nothing is written to
+ * Attendance until the Owner Accepts -- at that point the backend adds
+ * one Attendance row for that date with status "WO" (Week Off).
+ */
+
+function showManualReqTypeCheckInOut(){
+
+  document
+    .getElementById("manualReqCheckInOutSection")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("offRequestSection")
+    .classList.add("hidden");
+
+  document.getElementById("manualReqTypeCheckBtn").className = "primary";
+  document.getElementById("manualReqTypeOffBtn").className = "secondary";
+
+  showManualReqMessage("");
+
+}
+
+
+function showManualReqTypeOff(){
+
+  document
+    .getElementById("manualReqCheckInOutSection")
+    .classList.add("hidden");
+
+  document
+    .getElementById("offRequestSection")
+    .classList.remove("hidden");
+
+  document.getElementById("manualReqTypeCheckBtn").className = "secondary";
+  document.getElementById("manualReqTypeOffBtn").className = "primary";
+
+  showManualReqMessage("");
+
+  initOffRequestForm();
+
+}
+
+
+function initOffRequestForm(){
+
+  document.getElementById("offReqDate").value = "";
+  document.getElementById("offReqReason").value = "";
+
+}
+
+
+async function submitOffRequest(){
+
+  const date =
+    document.getElementById("offReqDate").value;
+
+  const reason =
+    document.getElementById("offReqReason").value.trim();
+
+  if(!date){
+
+    showManualReqMessage("Please select the Off date.");
+
+    return;
+
+  }
+
+  if(!reason){
+
+    showManualReqMessage("Please enter a reason for Off.");
+
+    return;
+
+  }
+
+  /* Requirement: an employee who already has attendance recorded for
+     this date (checked in, checked out, an already-approved WO, etc.)
+     cannot submit an Off Request for it. Checked client-side first
+     for immediate feedback; the backend re-checks this too. */
+
+  const hasAttendance =
+    allData.attendance.some(function(row){
+
+      return (
+        row.name.toLowerCase() === currentEmployee.toLowerCase() &&
+        row.date === date
+      );
+
+    });
+
+  if(hasAttendance){
+
+    showManualReqMessage(
+      "You already have attendance recorded for this date. Off Request not allowed."
+    );
+
+    return;
+
+  }
+
+  const hasPendingOffRequest =
+    (allData.offRequests || []).some(function(req){
+
+      return (
+        req.name.toLowerCase() === currentEmployee.toLowerCase() &&
+        req.date === date &&
+        req.status === "Pending"
+      );
+
+    });
+
+  if(hasPendingOffRequest){
+
+    showManualReqMessage(
+      "You already have a pending Off Request for this date."
+    );
+
+    return;
+
+  }
+
+  showManualReqMessage("Submitting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"submitOffRequest",
+          name:currentEmployee,
+          date:date,
+          reason:reason
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      initOffRequestForm();
+
+      showManualReqMessage(
+        data.message || "Off Request submitted. Waiting for Owner approval."
+      );
+
+      await loadData();
+
+    }else{
+
+      showManualReqMessage(
+        data.message || "Could not submit Off Request."
+      );
+
+    }
+
+  }catch(error){
+
+    showManualReqMessage(
+      "Could not submit Off Request. Please check your connection."
+    );
+
+  }
 
 }
 
@@ -2258,6 +2482,8 @@ function openOwnerScreen(){
 
   renderManualRequests();
 
+  renderOffRequests();
+
   renderEmployeeSettingsList();
 
   showOwnerCategoryGrid();
@@ -2371,6 +2597,8 @@ async function ownerAttendancePollTick(){
 
   renderManualRequests();
 
+  renderOffRequests();
+
   renderEmployeeSettingsList();
 
   const select =
@@ -2393,6 +2621,35 @@ async function checkIn(){
     document.getElementById("inTime");
 
   if(field.value){
+
+    return;
+
+  }
+
+  const date =
+    document.getElementById("attDate").value;
+
+  /* Block check-in on a date already marked as Week Off (WO) via an
+     approved Off Request. Checked before touching any field/button so
+     the UI never shows a false "checking in" state for a blocked
+     date. The backend re-checks this too. */
+
+  const woConflict =
+    allData.attendance.some(function(row){
+
+      return (
+        row.name.toLowerCase() === currentEmployee.toLowerCase() &&
+        row.date === date &&
+        row.status === "WO"
+      );
+
+    });
+
+  if(woConflict){
+
+    showEmployeeMessage(
+      "This date is marked as your Week Off (WO). You cannot check in on this date."
+    );
 
     return;
 
@@ -2421,9 +2678,6 @@ async function checkIn(){
     .disabled = true;
 
   calculateHours();
-
-  const date =
-    document.getElementById("attDate").value;
 
   showEmployeeMessage("Saving check-in...");
 
@@ -3230,8 +3484,11 @@ function renderOwnerAttendance(){
     const isOpenRecord =
       row.status === "Open";
 
+    const isViewOnlyRecord =
+      isOpenRecord || row.status === "WO";
+
     const isEditing =
-      !isOpenRecord &&
+      !isViewOnlyRecord &&
       !!editingRecord &&
       (
         editingRecord.rowId != null
@@ -3350,11 +3607,12 @@ function renderOwnerAttendance(){
 
       actionCell.appendChild(cancelBtn);
 
-    }else if(isOpenRecord){
+    }else if(isViewOnlyRecord){
 
-      /* Employee is currently checked in but hasn't tapped Submit
-         Attendance yet -- show a view-only "On Duty" row with no
-         Accept/Decline actions, since there's nothing to approve yet. */
+      /* Employee is currently checked in (Open, hasn't tapped Submit
+         Attendance yet) or the date is an approved Week Off (WO) --
+         either way, show a view-only row with no Accept/Edit actions,
+         since there's nothing to approve. */
 
       dateCell.textContent = formatDateDisplay(row.date);
 
@@ -3729,6 +3987,224 @@ function applyBadgeCount(elementId,count){
   }else{
 
     badge.classList.add("hidden");
+
+  }
+
+}
+
+
+/* ================= OFF REQUEST / WEEK OFF (Owner side) =================
+ * Shows every Off Request (Pending, Approved, and Declined -- not just
+ * Pending, so the Owner can see the outcome/history, per requirement).
+ * Accept/Decline are only offered for Pending ones. Accepting adds a
+ * "WO" Attendance row for that date via the backend; nothing else
+ * about existing Manual Check-In/Check-Out Requests is touched.
+ */
+
+function renderOffRequests(){
+
+  const container =
+    document.getElementById("offRequestsList");
+
+  if(!container){
+    return;
+  }
+
+  container.innerHTML = "";
+
+  const requests =
+    allData.offRequests || [];
+
+  const pendingCount =
+    requests.filter(function(r){ return r.status === "Pending"; }).length;
+
+  const countEl =
+    document.getElementById("offReqPendingCount");
+
+  if(countEl){
+    countEl.textContent =
+      pendingCount > 0 ? ("Pending Off Requests: " + pendingCount) : "";
+  }
+
+  if(requests.length === 0){
+
+    container.innerHTML =
+      '<p style="font-size:13px;color:#596273;">No Off Requests yet.</p>';
+
+    return;
+
+  }
+
+  const sorted =
+    requests.slice().sort(function(a,b){
+
+      if(a.status === "Pending" && b.status !== "Pending"){ return -1; }
+
+      if(a.status !== "Pending" && b.status === "Pending"){ return 1; }
+
+      if(a.date < b.date){ return -1; }
+
+      if(a.date > b.date){ return 1; }
+
+      return 0;
+
+    });
+
+  sorted.forEach(function(req){
+
+    const card =
+      document.createElement("div");
+
+    card.className = "subcard";
+    card.id = "offReqCard_" + req.requestId;
+
+    const header =
+      document.createElement("div");
+
+    header.innerHTML =
+      "<strong>Employee:</strong> " + escapeHtml(req.name) +
+      " &nbsp;&nbsp; <strong>Date:</strong> " + escapeHtml(formatDateDisplay(req.date));
+
+    card.appendChild(header);
+
+    const reasonLine =
+      document.createElement("div");
+
+    reasonLine.style.marginTop = "4px";
+    reasonLine.style.fontSize = "13px";
+    reasonLine.innerHTML =
+      "<strong>Reason:</strong> " + escapeHtml(req.reason || "-");
+
+    card.appendChild(reasonLine);
+
+    const statusLine =
+      document.createElement("div");
+
+    statusLine.style.marginTop = "6px";
+    statusLine.innerHTML =
+      statusBadge(req.status);
+
+    card.appendChild(statusLine);
+
+    if(req.status === "Pending"){
+
+      const actions =
+        document.createElement("div");
+
+      actions.style.display = "flex";
+      actions.style.gap = "10px";
+      actions.style.marginTop = "10px";
+
+      const acceptBtn =
+        document.createElement("button");
+
+      acceptBtn.className = "success";
+      acceptBtn.textContent = "Accept";
+
+      acceptBtn.onclick =
+        function(){
+
+          decideOffRequest(req.requestId,req.name,req.date,"Approved");
+
+        };
+
+      const declineBtn =
+        document.createElement("button");
+
+      declineBtn.className = "danger";
+      declineBtn.textContent = "Decline";
+
+      declineBtn.onclick =
+        function(){
+
+          decideOffRequest(req.requestId,req.name,req.date,"Declined");
+
+        };
+
+      actions.appendChild(acceptBtn);
+      actions.appendChild(declineBtn);
+
+      card.appendChild(actions);
+
+    }
+
+    const msgDiv =
+      document.createElement("div");
+
+    msgDiv.id = "offReqMsg_" + req.requestId;
+
+    card.appendChild(msgDiv);
+
+    container.appendChild(card);
+
+  });
+
+}
+
+
+async function decideOffRequest(requestId,name,date,decision){
+
+  showOffReqCardMessage(
+    requestId,
+    decision === "Approved" ? "Approving..." : "Declining..."
+  );
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"decideOffRequest",
+          requestId:requestId,
+          name:name,
+          date:date,
+          decision:decision
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      await loadData();
+
+      renderOffRequests();
+
+      renderOwnerAttendance();
+
+    }else{
+
+      showOffReqCardMessage(
+        requestId,
+        data.message || "Could not update Off Request."
+      );
+
+    }
+
+  }catch(error){
+
+    showOffReqCardMessage(
+      requestId,
+      "Could not update Off Request. Please check your connection."
+    );
+
+  }
+
+}
+
+
+function showOffReqCardMessage(requestId,text){
+
+  const el =
+    document.getElementById("offReqMsg_" + requestId);
+
+  if(el){
+
+    el.innerHTML =
+      text ? '<div class="message">' + text + '</div>' : "";
 
   }
 
@@ -5483,6 +5959,11 @@ function statusBadge(status){
   if(s === "open"){
     cls = "onduty";
     label = "On Duty";
+  }
+
+  if(s === "wo"){
+    cls = "wo";
+    label = "WO (Week Off)";
   }
 
   return (

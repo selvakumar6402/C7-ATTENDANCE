@@ -289,130 +289,6 @@ th{
   font-weight:normal;
 }
 
-/* ================= MONTHLY ATTENDANCE CALENDAR (Owner) ================= */
-
-.cal-header-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:6px;
-  margin-bottom:6px;
-}
-
-.cal-nav{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.cal-nav button{
-  padding:6px 10px;
-}
-
-.cal-grid{
-  display:grid;
-  grid-template-columns:repeat(7,1fr);
-  gap:6px;
-  margin-top:10px;
-}
-
-.cal-weekday{
-  text-align:center;
-  font-weight:bold;
-  font-size:12px;
-  color:#596273;
-  padding:4px 0;
-}
-
-.cal-cell{
-  background:#f7f8fa;
-  border:1px solid #e3e7ed;
-  border-radius:8px;
-  padding:6px;
-  min-height:92px;
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-  overflow-y:auto;
-}
-
-.cal-cell.empty-cell{
-  background:transparent;
-  border:none;
-}
-
-.cal-date-num{
-  font-weight:bold;
-  font-size:13px;
-  color:#1e293b;
-}
-
-.cal-date-num.today{
-  color:#1e40af;
-}
-
-.cal-shift{
-  background:white;
-  border-radius:6px;
-  padding:4px 6px;
-  font-size:11px;
-  border:1px solid #e3e7ed;
-  line-height:1.4;
-}
-
-.cal-shift-actions{
-  display:flex;
-  gap:4px;
-  margin-top:3px;
-  flex-wrap:wrap;
-}
-
-.cal-shift-actions button{
-  padding:3px 6px;
-  font-size:10px;
-}
-
-.cal-shift input[type="time"]{
-  padding:3px 4px;
-  margin:2px 0;
-  font-size:11px;
-}
-
-.cal-daily-total{
-  font-size:10px;
-  font-weight:bold;
-  border-top:1px dashed #d5dbe5;
-  padding-top:3px;
-  margin-top:2px;
-}
-
-@media(max-width:700px){
-
-  .cal-cell{
-    min-height:74px;
-    padding:4px;
-    font-size:10px;
-  }
-
-  .cal-date-num{
-    font-size:11px;
-  }
-
-  .cal-shift{
-    font-size:9px;
-    padding:3px 4px;
-  }
-
-  .cal-shift-actions button{
-    padding:2px 5px;
-    font-size:9px;
-  }
-
-}
-
 .row-flex{
   display:flex;
   justify-content:space-between;
@@ -995,7 +871,7 @@ th{
   </div>
 
 
-  <!-- SECTION 1: VIEW EMPLOYEE ATTENDANCE (Full Monthly Calendar) -->
+  <!-- SECTION 1: VIEW EMPLOYEE ATTENDANCE -->
   <div id="ownerSection1" class="card hidden">
 
     <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
@@ -1021,38 +897,40 @@ th{
 
     <div id="ownerViewPanel" class="hidden">
 
-      <h3 id="ownerViewEmployeeName" style="margin:0 0 10px;"></h3>
+      <div class="row-flex" style="flex-wrap:wrap;margin-top:6px;">
 
-      <!-- Top-left: Month + Year with Prev/Next nav. Top-right: live
-           Today's date + time (12hr AM/PM). -->
-      <div class="cal-header-row">
+        <h3 id="ownerViewEmployeeName" style="margin:0;"></h3>
 
-        <div class="cal-nav">
-
-          <button type="button" class="secondary" onclick="changeCalendarMonth(-1)">
-            ‹ Prev
-          </button>
-
-          <h2 id="calMonthYear" style="margin:0;font-size:19px;"></h2>
-
-          <button type="button" class="secondary" onclick="changeCalendarMonth(1)">
-            Next ›
-          </button>
-
-        </div>
-
-        <div id="calTodayInfo" style="font-size:13px;color:#596273;"></div>
+        <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;"></div>
 
       </div>
 
-      <!-- Full monthly grid. Every valid date of the selected month is
-           rendered; each date's attendance (including multiple shifts)
-           is shown inside its own cell, with the same Accept/Edit
-           actions as before. -->
-      <div id="calendarGrid" class="cal-grid"></div>
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Date</th>
+              <th>In Time</th>
+              <th>Out Time</th>
+              <th>Hours Worked</th>
+              <th>OT Hours</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="ownerTable"></tbody>
+
+        </table>
+
+      </div>
 
       <p style="text-align:right;font-weight:bold;margin-top:10px;">
-        Month Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
+        Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
       </p>
 
     </div>
@@ -1279,18 +1157,6 @@ let editingManualRequestId = null;
  * available now that the visible field shows AM/PM instead of it. */
 let empInTimeRaw = "";
 let empOutTimeRaw = "";
-
-/* ================= OWNER "VIEW EMPLOYEE ATTENDANCE" CALENDAR STATE =================
- * Which month/year the Owner's monthly attendance calendar is
- * currently showing. Starts on the current month; Prev/Next just
- * change these and re-render (see changeCalendarMonth()). */
-let calendarYear = new Date().getFullYear();
-let calendarMonth = new Date().getMonth();
-
-const CAL_MONTH_NAMES = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December"
-];
 
 
 /* ================= SESSION PERSISTENCE ================= */
@@ -2959,9 +2825,15 @@ function formatDateDisplay(dateStr){
 }
 
 
-/* OWNER ATTENDANCE -- FULL MONTHLY CALENDAR */
+/* OWNER ATTENDANCE (table view -- restored to the original layout;
+   the monthly calendar has been reverted per request. 12hr AM/PM time
+   display, DD-MM-YYYY date display, and the multi-shift OT fix are
+   all kept.) */
 
 function renderOwnerAttendance(){
+
+  const tbody =
+    document.getElementById("ownerTable");
 
   const emptyMessage =
     document.getElementById("ownerViewEmptyMessage");
@@ -2974,6 +2846,8 @@ function renderOwnerAttendance(){
 
   const selectedName =
     select ? select.value : "";
+
+  tbody.innerHTML = "";
 
   if(!selectedName){
 
@@ -3005,21 +2879,19 @@ function renderOwnerAttendance(){
     .textContent =
     selectedName;
 
-  renderCalendarHeader();
+  const todayInfo =
+    document.getElementById("ownerViewTodayInfo");
 
-  /* Only this employee's records that fall within the currently
-     selected calendar month/year -- Prev/Next (changeCalendarMonth)
-     moves this window and re-renders, loading that month's existing
-     attendance. "Open" (still on-duty, not yet Submitted) records are
-     included here too, same as before, so the calendar reflects
-     Check-In/Check-Out the moment they happen -- the employee never
-     has to tap Submit Attendance for the Owner's view to update. */
+  if(todayInfo){
+    todayInfo.textContent =
+      "Today: " + formatOwnerViewToday();
+  }
 
-  const monthRecords =
+  const records =
     allData.attendance
       .filter(function(row){
 
-        return row.name === selectedName && isDateInCalendarMonth(row.date);
+        return row.name === selectedName;
 
       })
       .sort(function(a,b){
@@ -3032,446 +2904,192 @@ function renderOwnerAttendance(){
 
       });
 
-  /* Monthly Total OT Hours = the SUM of every day's OT in the visible
-     month (each day's OT already correctly combines that day's
-     shifts -- see computeGroupTotals()/computeTotalOTHours() below,
-     unchanged from the existing fix). This recomputes from
-     allData.attendance every time renderOwnerAttendance() runs (every
-     Accept/Edit, every 20s poll tick, every month change), so it keeps
-     updating automatically as attendance is added -- nothing here is
-     a one-time snapshot. */
-
   const totalOTSpan =
     document.getElementById("ownerViewTotalOT");
 
   if(totalOTSpan){
     totalOTSpan.textContent =
-      computeTotalOTHours(monthRecords);
+      computeTotalOTHours(records);
   }
 
-  renderCalendarGrid(monthRecords);
+  if(records.length === 0){
 
-}
+    tbody.innerHTML =
+      "<tr><td colspan='7'>No attendance records for " +
+      selectedName +
+      ".</td></tr>";
 
-
-/* Month name shown top-left, e.g. "September 2026". */
-
-function renderCalendarHeader(){
-
-  const monthYearEl =
-    document.getElementById("calMonthYear");
-
-  if(monthYearEl){
-    monthYearEl.textContent =
-      CAL_MONTH_NAMES[calendarMonth] + " " + calendarYear;
-  }
-
-  renderCalendarTodayInfo();
-
-}
-
-
-/* Top-right "Today: DD-MM-YYYY | h:mm AM/PM" -- live date + time,
-   refreshed every time the calendar re-renders (including the
-   existing 20s auto-refresh poll). */
-
-function renderCalendarTodayInfo(){
-
-  const el =
-    document.getElementById("calTodayInfo");
-
-  if(!el){
     return;
-  }
-
-  const now =
-    new Date();
-
-  const dd =
-    String(now.getDate()).padStart(2,"0");
-
-  const mm =
-    String(now.getMonth() + 1).padStart(2,"0");
-
-  const yyyy =
-    now.getFullYear();
-
-  const timeStr =
-    formatHour12(now.getHours(),String(now.getMinutes()).padStart(2,"0"));
-
-  el.textContent =
-    "Today: " + dd + "-" + mm + "-" + yyyy + " | " + timeStr;
-
-}
-
-
-/* Moves the visible calendar month by delta (-1 = Prev, 1 = Next),
-   wrapping the year as needed, then re-renders so that month's
-   existing attendance loads. */
-
-function changeCalendarMonth(delta){
-
-  calendarMonth += delta;
-
-  if(calendarMonth < 0){
-    calendarMonth = 11;
-    calendarYear--;
-  }
-
-  if(calendarMonth > 11){
-    calendarMonth = 0;
-    calendarYear++;
-  }
-
-  renderOwnerAttendance();
-
-}
-
-
-/* True if a "yyyy-MM-dd" date string falls within the currently
-   selected calendar month/year. */
-
-function isDateInCalendarMonth(dateStr){
-
-  if(!dateStr){
-    return false;
-  }
-
-  const parts =
-    String(dateStr).split("-");
-
-  if(parts.length !== 3){
-    return false;
-  }
-
-  const y =
-    parseInt(parts[0],10);
-
-  const m =
-    parseInt(parts[1],10) - 1;
-
-  return y === calendarYear && m === calendarMonth;
-
-}
-
-
-/* Today's date as "yyyy-MM-dd", to highlight the current day cell. */
-
-function getTodayDateStr(){
-
-  const now =
-    new Date();
-
-  return (
-    now.getFullYear() + "-" +
-    String(now.getMonth() + 1).padStart(2,"0") + "-" +
-    String(now.getDate()).padStart(2,"0")
-  );
-
-}
-
-
-/* Builds the full grid: a weekday header row, blank filler cells up
-   to the 1st of the month, then one cell per valid date of the month
-   (never an invalid date like the 31st of a 30-day month). Each
-   date's attendance (including every separate shift, never merged or
-   overwritten) is rendered inside that date's own cell via
-   buildShiftEntryEl(). */
-
-function renderCalendarGrid(monthRecords){
-
-  const grid =
-    document.getElementById("calendarGrid");
-
-  if(!grid){
-    return;
-  }
-
-  grid.innerHTML = "";
-
-  const weekdayNames =
-    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-  weekdayNames.forEach(function(wd){
-
-    const wdCell =
-      document.createElement("div");
-
-    wdCell.className = "cal-weekday";
-    wdCell.textContent = wd;
-
-    grid.appendChild(wdCell);
-
-  });
-
-  const firstOfMonth =
-    new Date(calendarYear,calendarMonth,1);
-
-  const startWeekday =
-    firstOfMonth.getDay();
-
-  const daysInMonth =
-    new Date(calendarYear,calendarMonth + 1,0).getDate();
-
-  for(let i = 0; i < startWeekday; i++){
-
-    const blank =
-      document.createElement("div");
-
-    blank.className = "cal-cell empty-cell";
-
-    grid.appendChild(blank);
 
   }
 
-  const recordsByDate = {};
+  const dateGroups =
+    groupRecordsByDate(records);
 
-  monthRecords.forEach(function(row){
+  dateGroups.forEach(function(group){
 
-    if(!recordsByDate[row.date]){
-      recordsByDate[row.date] = [];
-    }
+  group.rows.forEach(function(row){
 
-    recordsByDate[row.date].push(row);
+    const isOpenRecord =
+      row.status === "Open";
 
-  });
+    const isEditing =
+      !isOpenRecord &&
+      !!editingRecord &&
+      (
+        editingRecord.rowId != null
+          ? editingRecord.rowId === row.rowId
+          : (editingRecord.name === row.name && editingRecord.date === row.date)
+      );
 
-  const todayStr =
-    getTodayDateStr();
+    const tr =
+      document.createElement("tr");
 
-  for(let day = 1; day <= daysInMonth; day++){
+    const dateCell =
+      document.createElement("td");
 
-    const dateStr =
-      calendarYear + "-" +
-      String(calendarMonth + 1).padStart(2,"0") + "-" +
-      String(day).padStart(2,"0");
+    const inCell =
+      document.createElement("td");
 
-    const cell =
-      document.createElement("div");
+    const outCell =
+      document.createElement("td");
 
-    cell.className = "cal-cell";
+    const hoursCell =
+      document.createElement("td");
 
-    const dateNum =
-      document.createElement("div");
+    hoursCell.textContent =
+      row.hoursWorked || "-";
 
-    dateNum.className =
-      "cal-date-num" + (dateStr === todayStr ? " today" : "");
+    const otCell =
+      document.createElement("td");
 
-    dateNum.textContent =
-      String(day);
+    otCell.textContent =
+      row.otHours || "-";
 
-    cell.appendChild(dateNum);
+    const statusCell =
+      document.createElement("td");
 
-    const dayRows =
-      recordsByDate[dateStr] || [];
+    const actionCell =
+      document.createElement("td");
 
-    if(dayRows.length > 0){
+    actionCell.className =
+      "actions";
 
-      dayRows.forEach(function(row,idx){
 
-        cell.appendChild(
-          buildShiftEntryEl(row,dayRows.length >= 2 ? (idx + 1) : null)
-        );
+    if(isEditing){
 
-      });
+      /* Editable In Time / Out Time for the "Edit -> Save" flow.
+         The Date itself is not editable -- it stays fixed to the
+         record's original date, which is also what keeps the Date
+         bug fix intact (no date field means no way to shift it).
+         Shown here in DD-MM-YYYY for display; <input type="time">
+         values use normalizeTime24() since they need the raw 24hr
+         value, never the 12hr AM/PM display text. */
 
-      if(dayRows.length >= 2){
+      dateCell.textContent = formatDateDisplay(row.date);
 
-        const totals =
-          computeGroupTotals(dayRows);
 
-        const totalDiv =
-          document.createElement("div");
+      const inInput =
+        document.createElement("input");
 
-        totalDiv.className = "cal-daily-total";
+      inInput.type = "time";
+      inInput.id = "editInTimeInput";
+      inInput.className = "cell-input";
+      inInput.value = normalizeTime24(row.inTime);
 
-        totalDiv.textContent =
-          "Total: " + totals.hoursWorked + "h / OT " + totals.otHours + "h";
+      inCell.appendChild(inInput);
 
-        cell.appendChild(totalDiv);
 
-      }
+      const outInput =
+        document.createElement("input");
 
-    }
+      outInput.type = "time";
+      outInput.id = "editOutTimeInput";
+      outInput.className = "cell-input";
+      outInput.value = normalizeTime24(row.outTime);
 
-    grid.appendChild(cell);
+      outCell.appendChild(outInput);
 
-  }
 
-}
+      statusCell.innerHTML =
+        '<span class="status editing">Editing</span>';
 
 
-/* Builds one shift's card inside a date cell -- same view/edit/accept
-   behaviour as the old table row, just laid out for the calendar.
-   shiftNumber is null for a single-shift day, or 1/2/3... when the
-   date has multiple shifts (each stays its own separate entry, never
-   merged). */
+      const saveBtn =
+        document.createElement("button");
 
-function buildShiftEntryEl(row,shiftNumber){
+      saveBtn.className = "success";
+      saveBtn.textContent = "Save";
 
-  const isOpenRecord =
-    row.status === "Open";
+      saveBtn.onclick =
+        function(){
 
-  const isEditing =
-    !isOpenRecord &&
-    !!editingRecord &&
-    (
-      editingRecord.rowId != null
-        ? editingRecord.rowId === row.rowId
-        : (editingRecord.name === row.name && editingRecord.date === row.date)
-    );
+          saveCorrectedAttendance(
+            row.name,
+            row.date,
+            row.rowId
+          );
 
-  const wrap =
-    document.createElement("div");
+        };
 
-  wrap.className = "cal-shift";
 
-  if(shiftNumber){
+      const cancelBtn =
+        document.createElement("button");
 
-    const label =
-      document.createElement("div");
+      cancelBtn.className = "secondary";
+      cancelBtn.textContent = "Cancel";
 
-    label.style.fontWeight = "bold";
-    label.textContent = "Shift " + shiftNumber;
+      cancelBtn.onclick =
+        function(){
 
-    wrap.appendChild(label);
+          editingRecord = null;
 
-  }
+          renderOwnerAttendance();
 
-  if(isEditing){
+        };
 
-    /* Editable In Time / Out Time for the "Edit -> Save" flow. The
-       Date itself is not editable -- it stays fixed to the record's
-       original date. <input type="time"> needs the raw 24hr value,
-       never the 12hr AM/PM display text -- see normalizeTime24(). */
 
-    const inInput =
-      document.createElement("input");
+      actionCell.appendChild(saveBtn);
 
-    inInput.type = "time";
-    inInput.id = "editInTimeInput";
-    inInput.className = "cell-input";
-    inInput.value = normalizeTime24(row.inTime);
+      actionCell.appendChild(cancelBtn);
 
-    wrap.appendChild(inInput);
+    }else if(isOpenRecord){
 
+      /* Employee is currently checked in but hasn't tapped Submit
+         Attendance yet -- show a view-only "On Duty" row with no
+         Accept/Decline actions, since there's nothing to approve yet. */
 
-    const outInput =
-      document.createElement("input");
+      dateCell.textContent = formatDateDisplay(row.date);
 
-    outInput.type = "time";
-    outInput.id = "editOutTimeInput";
-    outInput.className = "cell-input";
-    outInput.value = normalizeTime24(row.outTime);
+      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
 
-    wrap.appendChild(outInput);
+      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
 
+      statusCell.innerHTML =
+        statusBadge(row.status);
 
-    const statusLine =
-      document.createElement("div");
+      actionCell.textContent = "-";
 
-    statusLine.innerHTML =
-      '<span class="status editing">Editing</span>';
+    }else{
 
-    wrap.appendChild(statusLine);
+      dateCell.textContent = formatDateDisplay(row.date);
 
+      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
 
-    const actions =
-      document.createElement("div");
+      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
 
-    actions.className = "cal-shift-actions";
-
-
-    const saveBtn =
-      document.createElement("button");
-
-    saveBtn.className = "success";
-    saveBtn.textContent = "Save";
-
-    saveBtn.onclick =
-      function(){
-
-        saveCorrectedAttendance(
-          row.name,
-          row.date,
-          row.rowId
-        );
-
-      };
-
-
-    const cancelBtn =
-      document.createElement("button");
-
-    cancelBtn.className = "secondary";
-    cancelBtn.textContent = "Cancel";
-
-    cancelBtn.onclick =
-      function(){
-
-        editingRecord = null;
-
-        renderOwnerAttendance();
-
-      };
-
-
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
-
-    wrap.appendChild(actions);
-
-  }else{
-
-    /* Read-only display -- times shown 12hr AM/PM via
-       formatTimeDisplay(), never bare 24hr. */
-
-    const timeLine =
-      document.createElement("div");
-
-    timeLine.textContent =
-      "In: " + (formatTimeDisplay(row.inTime) || "-") +
-      "  Out: " + (formatTimeDisplay(row.outTime) || "-");
-
-    wrap.appendChild(timeLine);
-
-    if(row.hoursWorked || row.otHours){
-
-      const hoursLine =
-        document.createElement("div");
-
-      hoursLine.textContent =
-        "Hrs: " + (row.hoursWorked || "-") + "  OT: " + (row.otHours || "-");
-
-      wrap.appendChild(hoursLine);
-
-    }
-
-    const statusLine =
-      document.createElement("div");
-
-    statusLine.innerHTML =
-      statusBadge(row.status);
-
-    wrap.appendChild(statusLine);
-
-    if(!isOpenRecord){
-
-      /* Pending/Approved/Declined records get Accept + Edit, exactly
-         as before. "Open" (still on-duty) records stay view-only --
-         there's nothing to approve yet. */
-
-      const actions =
-        document.createElement("div");
-
-      actions.className = "cal-shift-actions";
+      statusCell.innerHTML =
+        statusBadge(row.status);
 
 
       const acceptBtn =
         document.createElement("button");
 
-      acceptBtn.className = "success";
-      acceptBtn.textContent = "Accept";
+      acceptBtn.className =
+        "success";
+
+      acceptBtn.textContent =
+        "Accept";
 
       acceptBtn.onclick =
         function(){
@@ -3486,14 +3104,19 @@ function buildShiftEntryEl(row,shiftNumber){
         };
 
 
-      const editBtn =
+      const declineBtn =
         document.createElement("button");
 
-      editBtn.className = "danger";
-      editBtn.textContent = "Edit";
-      editBtn.title = "Correct the Check-In / Check-Out times and save";
+      declineBtn.className =
+        "danger";
 
-      editBtn.onclick =
+      declineBtn.textContent =
+        "Edit";
+
+      declineBtn.title =
+        "Correct the Check-In / Check-Out times and save";
+
+      declineBtn.onclick =
         function(){
 
           /* Opens the record up for correction. Nothing is written
@@ -3510,16 +3133,82 @@ function buildShiftEntryEl(row,shiftNumber){
         };
 
 
-      actions.appendChild(acceptBtn);
-      actions.appendChild(editBtn);
+      actionCell.appendChild(acceptBtn);
 
-      wrap.appendChild(actions);
+      actionCell.appendChild(declineBtn);
 
     }
 
+
+    tr.appendChild(dateCell);
+
+    tr.appendChild(inCell);
+
+    tr.appendChild(outCell);
+
+    tr.appendChild(hoursCell);
+
+    tr.appendChild(otCell);
+
+    tr.appendChild(statusCell);
+
+    tr.appendChild(actionCell);
+
+    tbody.appendChild(tr);
+
+  });
+
+  /* Multiple shifts on the same date: each shift stays its own row
+     above (never merged/overwritten) -- this just adds one extra
+     read-only summary row showing that date's combined Hours Worked
+     and OT Hours, whenever there's more than one shift to add up. */
+
+  if(group.rows.length >= 2){
+
+    const totals =
+      computeGroupTotals(group.rows);
+
+    const totalRow =
+      document.createElement("tr");
+
+    totalRow.style.fontWeight = "bold";
+    totalRow.style.background = "#f7f8fa";
+
+    const labelCell =
+      document.createElement("td");
+
+    labelCell.colSpan = 3;
+    labelCell.style.textAlign = "right";
+    labelCell.textContent =
+      "Daily Total (" + group.rows.length + " shifts)";
+
+    const hoursCell =
+      document.createElement("td");
+
+    hoursCell.textContent = totals.hoursWorked;
+
+    const otCell =
+      document.createElement("td");
+
+    otCell.textContent = totals.otHours;
+
+    const statusCell =
+      document.createElement("td");
+
+    const actionCell =
+      document.createElement("td");
+
+    totalRow.appendChild(labelCell);
+    totalRow.appendChild(hoursCell);
+    totalRow.appendChild(otCell);
+    totalRow.appendChild(statusCell);
+    totalRow.appendChild(actionCell);
+
+    tbody.appendChild(totalRow);
+
   }
 
-  return wrap;
+  });
 
 }
 

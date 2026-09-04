@@ -1001,6 +1001,7 @@ th{
       <button type="button" class="tile" onclick="openOwnerSection(1)">
         <div class="tile-icon">🗓️</div>
         <div class="tile-title">View Employee Attendance</div>
+        <span id="viewAttendanceTileBadge" class="badge tile-badge hidden">0</span>
       </button>
 
       <button type="button" class="tile" onclick="openOwnerSection(2)">
@@ -2536,6 +2537,8 @@ function openOwnerScreen(){
 
   renderEmployeeSettingsList();
 
+  updateViewAttendanceBadge();
+
   showOwnerCategoryGrid();
 
   startOwnerAttendancePoll();
@@ -2591,6 +2594,14 @@ function openOwnerSection(sectionNumber){
     if(section){
       section.classList.toggle("hidden",i !== sectionNumber);
     }
+
+  }
+
+  if(sectionNumber === 1){
+
+    markAllPendingAttendanceAsRead();
+
+    updateViewAttendanceBadge();
 
   }
 
@@ -2714,6 +2725,8 @@ async function ownerAttendancePollTick(){
   renderOffRequests();
 
   renderEmployeeSettingsList();
+
+  updateViewAttendanceBadge();
 
   const select =
     document.getElementById("ownerViewEmployee");
@@ -4103,6 +4116,119 @@ function applyBadgeCount(elementId,count){
     badge.classList.add("hidden");
 
   }
+
+}
+
+
+/* ================= UNREAD "VIEW EMPLOYEE ATTENDANCE" BADGE =================
+ * Separate from the Manual Check-In/Check-Out Request badge above --
+ * this counts newly SUBMITTED attendance (status "Pending", i.e. the
+ * employee tapped Submit Attendance and it's awaiting the Owner's
+ * review) that the Owner hasn't opened "View Employee Attendance" for
+ * yet. Tracked as a set of already-read attendance row numbers
+ * (rowId, the actual Sheet row -- stable for the life of that row),
+ * persisted in localStorage so it survives reloads and correctly
+ * reflects submissions made from any employee device/session (the
+ * count is always recomputed from the live data loaded from the
+ * backend, not from anything client-side about the employee's own
+ * session).
+ *
+ * Only rows that are Pending AT THE TIME they're marked read are ever
+ * added to the read set -- this is what makes a row that is currently
+ * "Open" (checked in, not yet submitted) correctly start counting as
+ * unread the moment it later becomes "Pending", even if the Owner had
+ * already opened the section while it was still Open.
+ */
+
+const VIEW_ATTENDANCE_READ_KEY = "c7_attendance_view_read_rowids";
+
+function getReadAttendanceRowIds(){
+
+  try{
+
+    const raw =
+      localStorage.getItem(VIEW_ATTENDANCE_READ_KEY);
+
+    const parsed =
+      raw ? JSON.parse(raw) : [];
+
+    return new Set(Array.isArray(parsed) ? parsed : []);
+
+  }catch(error){
+
+    return new Set();
+
+  }
+
+}
+
+
+function saveReadAttendanceRowIds(readSet){
+
+  try{
+
+    localStorage.setItem(
+      VIEW_ATTENDANCE_READ_KEY,
+      JSON.stringify(Array.from(readSet))
+    );
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+function markAttendanceRowsAsRead(rowIds){
+
+  const readSet =
+    getReadAttendanceRowIds();
+
+  rowIds.forEach(function(rowId){
+    readSet.add(rowId);
+  });
+
+  saveReadAttendanceRowIds(readSet);
+
+}
+
+
+/* Marks every CURRENTLY Pending attendance row as read -- called when
+   the Owner opens "View Employee Attendance", covering all employees
+   at once (the badge is a dashboard-level indicator, not tied to
+   whichever employee is selected inside the section). */
+
+function markAllPendingAttendanceAsRead(){
+
+  const pendingRowIds =
+    allData.attendance
+      .filter(function(row){ return row.status === "Pending"; })
+      .map(function(row){ return row.rowId; });
+
+  markAttendanceRowsAsRead(pendingRowIds);
+
+}
+
+
+function computeUnreadAttendanceCount(){
+
+  const readSet =
+    getReadAttendanceRowIds();
+
+  return allData.attendance.filter(function(row){
+
+    return row.status === "Pending" && !readSet.has(row.rowId);
+
+  }).length;
+
+}
+
+
+function updateViewAttendanceBadge(){
+
+  applyBadgeCount("viewAttendanceTileBadge",computeUnreadAttendanceCount());
 
 }
 

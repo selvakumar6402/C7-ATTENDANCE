@@ -567,12 +567,52 @@ th{
 <!-- EMPLOYEE SCREEN -->
 <div id="employeeScreen" class="hidden">
 
+  <!-- EMPLOYEE DASHBOARD HEADER -->
   <div class="card">
 
     <div class="row-flex">
       <h2 id="employeeWelcome"></h2>
       <button class="secondary" onclick="openEmployeeSettings()" title="Settings">⚙️</button>
     </div>
+
+    <p>Select an option below.</p>
+
+  </div>
+
+
+  <!-- EMPLOYEE DASHBOARD CATEGORY GRID (tap a tile to open its section) -->
+  <div id="employeeCategoryGrid">
+
+    <div class="tile-grid">
+
+      <button type="button" class="tile" onclick="openEmployeeSection(1)">
+        <div class="tile-icon">🕒</div>
+        <div class="tile-title">Attendance Entry</div>
+      </button>
+
+      <button type="button" class="tile" onclick="openEmployeeSection(2)">
+        <div class="tile-icon">⬇️</div>
+        <div class="tile-title">Attendance Download &amp; View</div>
+      </button>
+
+      <button type="button" class="tile" onclick="openEmployeeSection(3)">
+        <div class="tile-icon">📝</div>
+        <div class="tile-title">Manual Check-in / Check-out Request &amp; Off Request</div>
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- SECTION 1: ATTENDANCE ENTRY -->
+  <div id="employeeSection1" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showEmployeeCategoryGrid()">
+      ← Back
+    </button>
+
+    <h2>Attendance Entry</h2>
 
     <p>Enter today's attendance.</p>
 
@@ -689,130 +729,14 @@ th{
   </div>
 
 
-  <!-- EMPLOYEE SETTINGS (Change PIN) -->
-  <div id="employeeSettingsPanel" class="card hidden">
+  <!-- SECTION 2: ATTENDANCE DOWNLOAD & VIEW -->
+  <div id="employeeSection2" class="card hidden">
 
-    <h2>⚙️ My Settings</h2>
-
-    <div class="subcard">
-
-      <h3>Change PIN</h3>
-
-      <label>Current PIN</label>
-
-      <input id="empChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
-
-      <label>New PIN</label>
-
-      <input id="empChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
-
-      <label>Confirm New PIN</label>
-
-      <input id="empChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
-
-      <button class="success" onclick="submitEmployeeChangePin()">
-        Update PIN
-      </button>
-
-      <div id="empChangePinMessage"></div>
-
-    </div>
-
-    <div class="subcard">
-
-      <h3>App Lock</h3>
-
-      <p style="font-size:13px;color:#596273;">
-        When turned on, you'll be asked to enter your PIN every time
-        you open the app, even though your login stays remembered on
-        this phone.
-      </p>
-
-      <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin:6px 0 0;">
-        <input type="checkbox" id="appLockToggle" onchange="toggleAppLock()" style="width:auto;margin:0;">
-        Enable App Lock
-      </label>
-
-    </div>
-
-    <div class="subcard">
-
-      <h3>Manual Check-In / Check-Out Request</h3>
-
-      <p style="font-size:13px;color:#596273;">
-        Forgot to Check-In or Check-Out? Select the date and enter the
-        correct times below. Your Owner will review and approve it.
-        Or choose <b>Off Request</b> below to request a day off.
-      </p>
-
-      <div class="login-buttons" style="margin-bottom:14px;">
-
-        <button type="button" class="primary" id="manualReqTypeCheckBtn" onclick="showManualReqTypeCheckInOut()">
-          Check-In / Check-Out
-        </button>
-
-        <button type="button" class="secondary" id="manualReqTypeOffBtn" onclick="showManualReqTypeOff()">
-          Off Request
-        </button>
-
-      </div>
-
-      <div id="manualReqCheckInOutSection">
-
-        <label>Attendance Date</label>
-
-        <input type="date" id="manualReqDate">
-
-        <div id="manualReqShifts"></div>
-
-        <div style="display:flex;gap:10px;margin-bottom:14px;">
-
-          <button type="button" class="secondary" id="manualReqAddShiftBtn" onclick="addManualRequestShiftRow()">
-            + Add Shift
-          </button>
-
-          <button type="button" class="secondary" id="manualReqRemoveShiftBtn" onclick="removeLastManualRequestShiftRow()">
-            - Remove Last Shift
-          </button>
-
-        </div>
-
-        <button class="success" onclick="submitManualRequest()">
-          Submit Request
-        </button>
-
-      </div>
-
-      <div id="offRequestSection" class="hidden">
-
-        <label>Off Date</label>
-
-        <input type="date" id="offReqDate">
-
-        <label>Reason for Off</label>
-
-        <input type="text" id="offReqReason" placeholder="Reason for Off">
-
-        <button class="success" onclick="submitOffRequest()">
-          Submit Off Request
-        </button>
-
-      </div>
-
-      <div id="manualReqMessage"></div>
-
-    </div>
-
-    <button class="secondary" style="margin-top:16px;" onclick="closeEmployeeSettings()">
-      Back
+    <button type="button" class="secondary back-btn" onclick="showEmployeeCategoryGrid()">
+      ← Back
     </button>
 
-  </div>
-
-
-  <div class="card">
-
-    <h2>My Attendance</h2>
+    <h2>Attendance Download &amp; View</h2>
 
     <div class="subcard">
 
@@ -862,6 +786,134 @@ th{
       </table>
 
     </div>
+
+  </div>
+
+
+  <!-- SECTION 3: MANUAL CHECK-IN / CHECK-OUT REQUEST & OFF REQUEST -->
+  <div id="employeeSection3" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showEmployeeCategoryGrid()">
+      ← Back
+    </button>
+
+    <h2>Manual Check-in / Check-out Request &amp; Off Request</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      Forgot to Check-In or Check-Out? Select the date and enter the
+      correct times below. Your Owner will review and approve it.
+      Or choose <b>Off Request</b> below to request a day off.
+    </p>
+
+    <div class="login-buttons" style="margin-bottom:14px;">
+
+      <button type="button" class="primary" id="manualReqTypeCheckBtn" onclick="showManualReqTypeCheckInOut()">
+        Check-In / Check-Out
+      </button>
+
+      <button type="button" class="secondary" id="manualReqTypeOffBtn" onclick="showManualReqTypeOff()">
+        Off Request
+      </button>
+
+    </div>
+
+    <div id="manualReqCheckInOutSection">
+
+      <label>Attendance Date</label>
+
+      <input type="date" id="manualReqDate">
+
+      <div id="manualReqShifts"></div>
+
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+
+        <button type="button" class="secondary" id="manualReqAddShiftBtn" onclick="addManualRequestShiftRow()">
+          + Add Shift
+        </button>
+
+        <button type="button" class="secondary" id="manualReqRemoveShiftBtn" onclick="removeLastManualRequestShiftRow()">
+          - Remove Last Shift
+        </button>
+
+      </div>
+
+      <button class="success" onclick="submitManualRequest()">
+        Submit Request
+      </button>
+
+    </div>
+
+    <div id="offRequestSection" class="hidden">
+
+      <label>Off Date</label>
+
+      <input type="date" id="offReqDate">
+
+      <label>Reason for Off</label>
+
+      <input type="text" id="offReqReason" placeholder="Reason for Off">
+
+      <button class="success" onclick="submitOffRequest()">
+        Submit Off Request
+      </button>
+
+    </div>
+
+    <div id="manualReqMessage"></div>
+
+  </div>
+
+
+  <!-- EMPLOYEE SETTINGS (Change PIN + App Lock -- unchanged, opened via
+       the ⚙️ button; separate from the 3 dashboard tiles above) -->
+  <div id="employeeSettingsPanel" class="card hidden">
+
+    <h2>⚙️ My Settings</h2>
+
+    <div class="subcard">
+
+      <h3>Change PIN</h3>
+
+      <label>Current PIN</label>
+
+      <input id="empChangeCurrentPin" type="password" inputmode="numeric" maxlength="4" placeholder="Current PIN">
+
+      <label>New PIN</label>
+
+      <input id="empChangeNewPin" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN">
+
+      <label>Confirm New PIN</label>
+
+      <input id="empChangeConfirmPin" type="password" inputmode="numeric" maxlength="4" placeholder="Confirm New PIN">
+
+      <button class="success" onclick="submitEmployeeChangePin()">
+        Update PIN
+      </button>
+
+      <div id="empChangePinMessage"></div>
+
+    </div>
+
+    <div class="subcard">
+
+      <h3>App Lock</h3>
+
+      <p style="font-size:13px;color:#596273;">
+        When turned on, you'll be asked to enter your PIN every time
+        you open the app, even though your login stays remembered on
+        this phone.
+      </p>
+
+      <label style="display:flex;align-items:center;gap:8px;font-weight:normal;margin:6px 0 0;">
+        <input type="checkbox" id="appLockToggle" onchange="toggleAppLock()" style="width:auto;margin:0;">
+        Enable App Lock
+      </label>
+
+    </div>
+
+    <button class="secondary" style="margin-top:16px;" onclick="closeEmployeeSettings()">
+      Back
+    </button>
 
   </div>
 
@@ -1539,10 +1591,6 @@ function openEmployeeSettings(){
   document
     .getElementById("employeeSettingsPanel")
     .classList.remove("hidden");
-
-  initManualRequestForm();
-
-  showManualReqTypeCheckInOut();
 
   const appLockToggle =
     document.getElementById("appLockToggle");
@@ -2386,6 +2434,8 @@ function openEmployeeScreen(){
 
   renderEmployeeAttendance();
 
+  showEmployeeCategoryGrid();
+
 }
 
 
@@ -2541,6 +2591,70 @@ function openOwnerSection(sectionNumber){
     if(section){
       section.classList.toggle("hidden",i !== sectionNumber);
     }
+
+  }
+
+}
+
+
+/* ================= EMPLOYEE DASHBOARD CATEGORY NAVIGATION =================
+ * Mirrors the Owner dashboard's tile navigation above. The dashboard
+ * opens on 3 tiles (Attendance Entry / Attendance Download & View /
+ * Manual Check-in-Check-out Request & Off Request); tapping one hides
+ * the tile grid and shows that section's existing content in full
+ * (same elements/ids/functions as before -- only where they're
+ * displayed has changed). "← Back" on each section returns to the
+ * tile grid.
+ */
+
+function showEmployeeCategoryGrid(){
+
+  const grid =
+    document.getElementById("employeeCategoryGrid");
+
+  if(grid){
+    grid.classList.remove("hidden");
+  }
+
+  for(let i = 1; i <= 3; i++){
+
+    const section =
+      document.getElementById("employeeSection" + i);
+
+    if(section){
+      section.classList.add("hidden");
+    }
+
+  }
+
+}
+
+
+function openEmployeeSection(sectionNumber){
+
+  const grid =
+    document.getElementById("employeeCategoryGrid");
+
+  if(grid){
+    grid.classList.add("hidden");
+  }
+
+  for(let i = 1; i <= 3; i++){
+
+    const section =
+      document.getElementById("employeeSection" + i);
+
+    if(section){
+      section.classList.toggle("hidden",i !== sectionNumber);
+    }
+
+  }
+
+  if(sectionNumber === 3){
+
+    initManualRequestForm();
+
+    showManualReqTypeCheckInOut();
 
   }
 

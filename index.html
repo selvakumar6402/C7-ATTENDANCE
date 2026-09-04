@@ -2627,14 +2627,6 @@ function openOwnerSection(sectionNumber){
 
   }
 
-  if(sectionNumber === 1){
-
-    markAllPendingAttendanceAsRead();
-
-    updateViewAttendanceBadge();
-
-  }
-
 }
 
 
@@ -3992,6 +3984,33 @@ function renderOwnerAttendance(){
 
 function onOwnerViewEmployeeChange(){
 
+  const select =
+    document.getElementById("ownerViewEmployee");
+
+  const selectedName =
+    select ? select.value : "";
+
+  /* Marking as read happens HERE -- scoped to only the employee the
+     Owner actually selected/viewed, not every employee's pending
+     submissions at once. This is what makes an unrelated employee's
+     new submission keep showing as unread even while the Owner is
+     looking at a different employee's attendance. */
+
+  if(selectedName){
+
+    const pendingRowIds =
+      allData.attendance
+        .filter(function(row){
+          return row.name === selectedName && row.status === "Pending";
+        })
+        .map(function(row){ return row.rowId; });
+
+    markAttendanceRowsAsRead(pendingRowIds);
+
+    updateViewAttendanceBadge();
+
+  }
+
   renderOwnerAttendance();
 
 }
@@ -4287,21 +4306,13 @@ function markAttendanceRowsAsRead(rowIds){
 }
 
 
-/* Marks every CURRENTLY Pending attendance row as read -- called when
-   the Owner opens "View Employee Attendance", covering all employees
-   at once (the badge is a dashboard-level indicator, not tied to
-   whichever employee is selected inside the section). */
-
-function markAllPendingAttendanceAsRead(){
-
-  const pendingRowIds =
-    allData.attendance
-      .filter(function(row){ return row.status === "Pending"; })
-      .map(function(row){ return row.rowId; });
-
-  markAttendanceRowsAsRead(pendingRowIds);
-
-}
+/* Marking read is now done at the point of an actual view/decision on
+   a SPECIFIC employee's submission -- see onOwnerViewEmployeeChange()
+   (selecting an employee marks that employee's currently-Pending rows
+   as read), changeStatus() (Accept), and saveCorrectedAttendance()
+   (Edit -> Save). There is intentionally no blanket "mark everything
+   read" function anymore -- that was what let an unrelated employee's
+   still-unhandled submission get cleared just by opening the tile. */
 
 
 function computeUnreadAttendanceCount(){
@@ -4906,6 +4917,12 @@ async function changeStatus(name,date,status,rowId){
 
       }
 
+      if(rowId){
+        markAttendanceRowsAsRead([rowId]);
+      }
+
+      updateViewAttendanceBadge();
+
       renderOwnerAttendance();
 
     }else{
@@ -5000,6 +5017,12 @@ async function saveCorrectedAttendance(name,originalDate,rowId){
         record.status = "Approved";
 
       }
+
+      if(rowId){
+        markAttendanceRowsAsRead([rowId]);
+      }
+
+      updateViewAttendanceBadge();
 
       editingRecord = null;
 

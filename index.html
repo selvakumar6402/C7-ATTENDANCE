@@ -570,12 +570,32 @@ th{
   <!-- EMPLOYEE DASHBOARD HEADER -->
   <div class="card">
 
-    <div class="row-flex">
-      <h2 id="employeeWelcome"></h2>
-      <button class="secondary" onclick="openEmployeeSettings()" title="Settings">⚙️</button>
-    </div>
+    <div class="row-flex" style="align-items:flex-start;flex-wrap:wrap;">
 
-    <p>Select an option below.</p>
+      <div>
+
+        <h2 id="employeeWelcome" style="margin:0;"></h2>
+
+        <p style="margin:4px 0 0;">Select an option below.</p>
+
+      </div>
+
+      <div style="text-align:right;">
+
+        <div id="employeeHeaderDateTime" style="font-size:13px;color:#596273;"></div>
+
+        <button
+          class="secondary"
+          onclick="openEmployeeSettings()"
+          title="Settings"
+          style="margin-top:8px;"
+        >
+          ⚙️
+        </button>
+
+      </div>
+
+    </div>
 
   </div>
 
@@ -1303,6 +1323,12 @@ let editingEmployee = null;
    so the selected employee's view picks up new Check-In/Check-Out
    data automatically without the Owner needing to reload the page. */
 let ownerAttendancePollTimer = null;
+
+/* Interval handle for the Employee Dashboard's periodic refresh (see
+   startEmployeeAttendancePoll/stopEmployeeAttendancePoll below) --
+   keeps the header Date/Time live and the Employee Attendance View in
+   sync, the same way the Owner Dashboard's poll already does. */
+let employeeAttendancePollTimer = null;
 
 /* How many shift rows are currently shown on the Employee's Manual
    Check-In/Check-Out Request form (1-3). */
@@ -2435,6 +2461,10 @@ function openEmployeeScreen(){
 
   renderEmployeeAttendance();
 
+  renderEmployeeHeaderDateTime();
+
+  startEmployeeAttendancePoll();
+
   showEmployeeCategoryGrid();
 
 }
@@ -2740,6 +2770,64 @@ async function ownerAttendancePollTick(){
 }
 
 
+/* ================= EMPLOYEE DASHBOARD HEADER CLOCK + AUTO-REFRESH =================
+ * Mirrors the Owner Dashboard's header Date/Time + poll above exactly
+ * (same 20s interval, same style/format via formatOwnerViewToday()),
+ * so the Employee Dashboard's top-right Date/Time stays live the same
+ * way, and the Employee Attendance View picks up the employee's own
+ * live Check-In/Check-Out status without needing to reload the page.
+ */
+
+function renderEmployeeHeaderDateTime(){
+
+  const el =
+    document.getElementById("employeeHeaderDateTime");
+
+  if(el){
+    el.textContent = formatOwnerViewToday();
+  }
+
+}
+
+
+function startEmployeeAttendancePoll(){
+
+  stopEmployeeAttendancePoll();
+
+  employeeAttendancePollTimer =
+    setInterval(employeeAttendancePollTick,20000);
+
+}
+
+
+function stopEmployeeAttendancePoll(){
+
+  if(employeeAttendancePollTimer){
+
+    clearInterval(employeeAttendancePollTimer);
+
+    employeeAttendancePollTimer = null;
+
+  }
+
+}
+
+
+async function employeeAttendancePollTick(){
+
+  if(!currentEmployee){
+    return;
+  }
+
+  renderEmployeeHeaderDateTime();
+
+  await loadData();
+
+  renderEmployeeAttendance();
+
+}
+
+
 /* CHECK IN */
 
 async function checkIn(){
@@ -2858,6 +2946,8 @@ async function checkIn(){
 
       await loadData();
 
+      renderEmployeeAttendance();
+
     }else{
 
       showEmployeeMessage(
@@ -2962,6 +3052,8 @@ async function checkOut(){
       );
 
       await loadData();
+
+      renderEmployeeAttendance();
 
     }else{
 
@@ -3395,7 +3487,7 @@ function renderEmployeeAttendance(){
     allData.attendance
       .filter(function(row){
 
-        return row.name === currentEmployee && row.status !== "Open";
+        return row.name === currentEmployee;
 
       })
       .sort(function(a,b){
@@ -6232,6 +6324,8 @@ function logout(){
   editingManualRequestId = null;
 
   stopOwnerAttendancePoll();
+
+  stopEmployeeAttendancePoll();
 
   clearSession();
 

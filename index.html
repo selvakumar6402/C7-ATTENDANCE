@@ -185,6 +185,80 @@ th{
   color:#6d28d9;
 }
 
+/* ================= ATTENDANCE SUMMARY CARDS (Owner + Employee) ================= */
+
+.summary-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:15px;
+  font-weight:bold;
+  color:#1e293b;
+  margin:4px 0 10px;
+}
+
+.summary-month-nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.summary-month-nav button{
+  padding:5px 10px;
+  font-size:13px;
+  font-weight:normal;
+}
+
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:14px;
+  margin-bottom:16px;
+}
+
+.summary-card{
+  background:white;
+  border:1px solid #e3e7ed;
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 3px 15px rgba(0,0,0,.06);
+}
+
+.summary-card-title{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:13px;
+  color:#596273;
+  font-weight:bold;
+  margin-bottom:10px;
+}
+
+.summary-card-icon{
+  font-size:17px;
+  line-height:1;
+}
+
+.summary-card-value{
+  font-size:24px;
+  font-weight:bold;
+  color:#1e293b;
+}
+
+@media(max-width:480px){
+
+  .summary-grid{
+    grid-template-columns:1fr;
+  }
+
+  .summary-card-value{
+    font-size:21px;
+  }
+
+}
+
 .badge{
   display:inline-flex;
   align-items:center;
@@ -758,6 +832,34 @@ th{
 
     <h2>Attendance Download &amp; View</h2>
 
+    <div class="summary-heading">
+
+      <span id="employeeSummaryMonthLabel">Attendance Summary</span>
+
+      <div class="summary-month-nav">
+
+        <button type="button" class="secondary" onclick="changeEmployeeSummaryMonth(-1)">‹ Prev</button>
+
+        <button type="button" class="secondary" onclick="changeEmployeeSummaryMonth(1)">Next ›</button>
+
+      </div>
+
+    </div>
+
+    <div class="summary-grid">
+
+      <div class="summary-card">
+        <div class="summary-card-title"><span class="summary-card-icon">📅</span> Total Working Days</div>
+        <div class="summary-card-value" id="employeeSummaryWorkingDays">0 Days</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-card-title"><span class="summary-card-icon">🕐</span> Total OT Hours</div>
+        <div class="summary-card-value" id="employeeSummaryOTHours">0h 0m</div>
+      </div>
+
+    </div>
+
     <div class="subcard">
 
       <h3>Download My Attendance</h3>
@@ -1079,6 +1181,34 @@ th{
 
       </div>
 
+      <div class="summary-heading">
+
+        <span id="ownerSummaryMonthLabel">Attendance Summary</span>
+
+        <div class="summary-month-nav">
+
+          <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(-1)">‹ Prev</button>
+
+          <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(1)">Next ›</button>
+
+        </div>
+
+      </div>
+
+      <div class="summary-grid">
+
+        <div class="summary-card">
+          <div class="summary-card-title"><span class="summary-card-icon">📅</span> Total Working Days</div>
+          <div class="summary-card-value" id="ownerSummaryWorkingDays">0 Days</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-title"><span class="summary-card-icon">🕐</span> Total OT Hours</div>
+          <div class="summary-card-value" id="ownerSummaryOTHours">0h 0m</div>
+        </div>
+
+      </div>
+
       <div class="table-wrap">
 
         <table>
@@ -1102,10 +1232,6 @@ th{
         </table>
 
       </div>
-
-      <p style="text-align:right;font-weight:bold;margin-top:10px;">
-        Total OT Hours: <span id="ownerViewTotalOT">0.00</span>
-      </p>
 
     </div>
 
@@ -2461,6 +2587,8 @@ function openEmployeeScreen(){
 
   renderEmployeeAttendance();
 
+  renderEmployeeAttendanceSummary();
+
   renderEmployeeHeaderDateTime();
 
   startEmployeeAttendancePoll();
@@ -2817,6 +2945,8 @@ async function employeeAttendancePollTick(){
 
   renderEmployeeAttendance();
 
+  renderEmployeeAttendanceSummary();
+
 }
 
 
@@ -2940,6 +3070,8 @@ async function checkIn(){
 
       renderEmployeeAttendance();
 
+      renderEmployeeAttendanceSummary();
+
     }else{
 
       showEmployeeMessage(
@@ -3046,6 +3178,8 @@ async function checkOut(){
       await loadData();
 
       renderEmployeeAttendance();
+
+      renderEmployeeAttendanceSummary();
 
     }else{
 
@@ -3449,6 +3583,8 @@ async function saveAttendance(){
 
       renderEmployeeAttendance();
 
+      renderEmployeeAttendanceSummary();
+
     }else{
 
       showEmployeeMessage(data.message);
@@ -3666,13 +3802,7 @@ function renderOwnerAttendance(){
 
       });
 
-  const totalOTSpan =
-    document.getElementById("ownerViewTotalOT");
-
-  if(totalOTSpan){
-    totalOTSpan.textContent =
-      computeTotalOTHours(records);
-  }
+  renderOwnerAttendanceSummary();
 
   if(records.length === 0){
 
@@ -4866,6 +4996,263 @@ function computeGroupTotals(groupRows){
     hoursWorked: hours.toFixed(2),
     otHours: ot.toFixed(2)
   };
+
+}
+
+
+/* ================= TOTAL WORKING DAYS (Owner + Employee Attendance Summary) =================
+ * Adds the "Total Working Days" card alongside "Total OT Hours" in an
+ * "Attendance Summary" block, scoped to a selectable month, on both
+ * the Owner's "View Employee Attendance" and the Employee's
+ * "Attendance Download & View". The OT Hours value shown here still
+ * comes from the EXISTING, unchanged computeTotalOTHours()/
+ * computeGroupTotals() above -- this section only adds a month filter
+ * in front of it and a new "Xh Ym" display format; the OT calculation
+ * itself is untouched. The attendance table(s), Accept/Edit, and
+ * every other existing behaviour are unaffected -- this only adds the
+ * two summary cards.
+ */
+
+const SUMMARY_MONTH_NAMES = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+/* A day only counts toward "Total Working Days" if it has at least
+   one "submitted, valid" record -- Pending (submitted, awaiting
+   review) or Approved (reviewed and confirmed). "Open" (checked in,
+   not yet submitted) and "WO" (Week Off -- explicitly not a working
+   day) and "Declined" (rejected) are excluded. */
+
+function isCountableWorkingDayStatus(status){
+
+  return status === "Pending" || status === "Approved";
+
+}
+
+
+function filterRecordsByMonth(records,year,month){
+
+  return records.filter(function(row){
+
+    if(!row.date){
+      return false;
+    }
+
+    const parts =
+      String(row.date).split("-");
+
+    if(parts.length !== 3){
+      return false;
+    }
+
+    const y =
+      parseInt(parts[0],10);
+
+    const m =
+      parseInt(parts[1],10) - 1;
+
+    return y === year && m === month;
+
+  });
+
+}
+
+
+/* Counts 1 working day per UNIQUE attendance date -- multiple valid
+   records/shifts on the same date still count as just 1 day, never
+   duplicated. */
+
+function computeTotalWorkingDays(records){
+
+  const uniqueDates = new Set();
+
+  records.forEach(function(row){
+
+    if(isCountableWorkingDayStatus(row.status)){
+      uniqueDates.add(row.date);
+    }
+
+  });
+
+  return uniqueDates.size;
+
+}
+
+
+/* Converts a decimal-hours value (exactly what computeTotalOTHours()
+   returns, unchanged) into "Xh Ym" text for the summary card -- e.g.
+   "18.75" -> "18h 45m". Display-only, same idea as the existing
+   formatHoursDisplay()/formatTimeDisplay() display formatters. */
+
+function formatHoursMinutesLong(value){
+
+  if(value === undefined || value === null || value === ""){
+    return "0h 0m";
+  }
+
+  const decimalHours =
+    parseFloat(value);
+
+  if(isNaN(decimalHours)){
+    return "0h 0m";
+  }
+
+  const totalMinutes =
+    Math.round(decimalHours * 60);
+
+  const hh =
+    Math.floor(totalMinutes / 60);
+
+  const mm =
+    totalMinutes % 60;
+
+  return hh + "h " + mm + "m";
+
+}
+
+
+function formatWorkingDaysLabel(count){
+
+  return count + (count === 1 ? " Day" : " Days");
+
+}
+
+
+/* -- Owner side: scoped to the currently selected employee -- */
+
+let ownerSummaryYear = new Date().getFullYear();
+let ownerSummaryMonth = new Date().getMonth();
+
+function changeOwnerSummaryMonth(delta){
+
+  ownerSummaryMonth += delta;
+
+  if(ownerSummaryMonth < 0){
+    ownerSummaryMonth = 11;
+    ownerSummaryYear--;
+  }
+
+  if(ownerSummaryMonth > 11){
+    ownerSummaryMonth = 0;
+    ownerSummaryYear++;
+  }
+
+  renderOwnerAttendanceSummary();
+
+}
+
+
+function renderOwnerAttendanceSummary(){
+
+  const labelEl =
+    document.getElementById("ownerSummaryMonthLabel");
+
+  if(labelEl){
+    labelEl.textContent =
+      "Attendance Summary – " + SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear;
+  }
+
+  const workingDaysEl =
+    document.getElementById("ownerSummaryWorkingDays");
+
+  const otHoursEl =
+    document.getElementById("ownerSummaryOTHours");
+
+  const select =
+    document.getElementById("ownerViewEmployee");
+
+  const selectedName =
+    select ? select.value : "";
+
+  if(!selectedName){
+
+    if(workingDaysEl){ workingDaysEl.textContent = formatWorkingDaysLabel(0); }
+
+    if(otHoursEl){ otHoursEl.textContent = "0h 0m"; }
+
+    return;
+
+  }
+
+  const employeeRecords =
+    allData.attendance.filter(function(row){
+      return row.name === selectedName;
+    });
+
+  const monthRecords =
+    filterRecordsByMonth(employeeRecords,ownerSummaryYear,ownerSummaryMonth);
+
+  if(workingDaysEl){
+    workingDaysEl.textContent =
+      formatWorkingDaysLabel(computeTotalWorkingDays(monthRecords));
+  }
+
+  if(otHoursEl){
+    otHoursEl.textContent =
+      formatHoursMinutesLong(computeTotalOTHours(monthRecords));
+  }
+
+}
+
+
+/* -- Employee side: the logged-in employee's own records only -- */
+
+let employeeSummaryYear = new Date().getFullYear();
+let employeeSummaryMonth = new Date().getMonth();
+
+function changeEmployeeSummaryMonth(delta){
+
+  employeeSummaryMonth += delta;
+
+  if(employeeSummaryMonth < 0){
+    employeeSummaryMonth = 11;
+    employeeSummaryYear--;
+  }
+
+  if(employeeSummaryMonth > 11){
+    employeeSummaryMonth = 0;
+    employeeSummaryYear++;
+  }
+
+  renderEmployeeAttendanceSummary();
+
+}
+
+
+function renderEmployeeAttendanceSummary(){
+
+  const labelEl =
+    document.getElementById("employeeSummaryMonthLabel");
+
+  if(labelEl){
+    labelEl.textContent =
+      "Attendance Summary – " + SUMMARY_MONTH_NAMES[employeeSummaryMonth] + " " + employeeSummaryYear;
+  }
+
+  const employeeRecords =
+    allData.attendance.filter(function(row){
+      return row.name === currentEmployee;
+    });
+
+  const monthRecords =
+    filterRecordsByMonth(employeeRecords,employeeSummaryYear,employeeSummaryMonth);
+
+  const workingDaysEl =
+    document.getElementById("employeeSummaryWorkingDays");
+
+  const otHoursEl =
+    document.getElementById("employeeSummaryOTHours");
+
+  if(workingDaysEl){
+    workingDaysEl.textContent =
+      formatWorkingDaysLabel(computeTotalWorkingDays(monthRecords));
+  }
+
+  if(otHoursEl){
+    otHoursEl.textContent =
+      formatHoursMinutesLong(computeTotalOTHours(monthRecords));
+  }
 
 }
 

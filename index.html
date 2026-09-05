@@ -259,6 +259,140 @@ th{
 
 }
 
+/* ================= ATTENDANCE LIST (Owner: View Employee Attendance) =================
+ * Card-based, grouped-by-employee-then-date layout. Replaces the old
+ * wide table (which cut off columns on mobile and repeated the date
+ * for every shift). Each calendar date appears once per employee;
+ * multiple shifts on that date are separate shift cards underneath
+ * it, never merged as data -- only the display groups them. */
+
+.att-list{
+  margin-top:10px;
+}
+
+.att-employee-block{
+  margin-bottom:20px;
+}
+
+.att-employee-block:last-child{
+  margin-bottom:0;
+}
+
+.att-employee-name{
+  font-weight:bold;
+  font-size:15px;
+  color:#1e293b;
+  margin-bottom:10px;
+  padding-bottom:6px;
+  border-bottom:2px solid #e3e7ed;
+}
+
+.att-date-group{
+  background:#f7f8fa;
+  border:1px solid #e3e7ed;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.att-date-group:last-child{
+  margin-bottom:0;
+}
+
+.att-date-label{
+  font-weight:bold;
+  font-size:14px;
+  color:#1e293b;
+  margin-bottom:10px;
+}
+
+.att-shift-card{
+  background:white;
+  border:1px solid #e3e7ed;
+  border-radius:10px;
+  padding:10px 12px;
+  margin-bottom:8px;
+}
+
+.att-shift-card:last-child{
+  margin-bottom:0;
+}
+
+.att-shift-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  font-weight:bold;
+  font-size:13px;
+  color:#596273;
+  margin-bottom:8px;
+}
+
+.att-shift-fields{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 20px;
+  margin-bottom:8px;
+}
+
+.att-shift-field{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:78px;
+}
+
+.att-shift-field-label{
+  font-size:11px;
+  color:#8b93a1;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+.att-shift-field-value{
+  font-size:14px;
+  color:#1e293b;
+  font-weight:600;
+}
+
+.att-shift-field input[type="time"]{
+  margin:0;
+  padding:6px 8px;
+  font-size:13px;
+}
+
+.att-shift-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.att-shift-actions button{
+  padding:7px 12px;
+  font-size:13px;
+}
+
+.att-daily-total{
+  text-align:right;
+  font-weight:bold;
+  font-size:12px;
+  color:#1e293b;
+  border-top:1px dashed #d5dbe5;
+  padding-top:8px;
+  margin-top:2px;
+}
+
+.att-empty-message{
+  padding:16px;
+  text-align:center;
+  color:#596273;
+  font-size:14px;
+  background:#f7f8fa;
+  border-radius:12px;
+}
+
 .badge{
   display:inline-flex;
   align-items:center;
@@ -1195,32 +1329,9 @@ th{
 
     </div>
 
-    <div class="table-wrap">
+    <div id="ownerTable" class="att-list"></div>
 
-      <table>
-
-        <thead>
-
-          <tr>
-            <th>Employee</th>
-            <th>Date</th>
-            <th>In Time</th>
-            <th>Out Time</th>
-            <th>Hours Worked</th>
-            <th>OT Hours</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-
-          </thead>
-
-          <tbody id="ownerTable"></tbody>
-
-        </table>
-
-      </div>
-
-    </div>
+  </div>
 
 
   <!-- SECTION 2: ATTENDANCE DOWNLOAD & DELETE -->
@@ -3718,10 +3829,10 @@ function formatDateDisplay(dateStr){
 
 function renderOwnerAttendance(){
 
-  const tbody =
+  const container =
     document.getElementById("ownerTable");
 
-  tbody.innerHTML = "";
+  container.innerHTML = "";
 
   const todayInfo =
     document.getElementById("ownerViewTodayInfo");
@@ -3731,25 +3842,29 @@ function renderOwnerAttendance(){
       "Today: " + formatOwnerViewToday();
   }
 
-  /* No more "Select Employee" gate -- View Employee Attendance now
-     shows every employee's attendance for the selected month
-     directly, driven by ownerSummaryYear/ownerSummaryMonth (the same
-     state the Select Month picker, Prev/Next, and the Attendance
-     Summary cards all share). Accept/Edit still work exactly as
-     before -- each button still acts on that specific row's own
-     name/date/rowId, regardless of there being no employee filter. */
+  /* No "Select Employee" gate -- View Employee Attendance shows every
+     employee's attendance for the selected month directly, driven by
+     ownerSummaryYear/ownerSummaryMonth (the same state the Select
+     Month picker, Prev/Next, and the Attendance Summary cards all
+     share). Accept/Edit still work exactly as before -- each button
+     still acts on that specific row's own name/date/rowId.
+
+     Sorted by employee name first, then date, so each employee's
+     records form one contiguous block with their dates in
+     chronological order underneath -- this is what
+     groupRecordsByEmployeeThenDate() below relies on. */
 
   const records =
     filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
       .sort(function(a,b){
 
-        if(a.date < b.date){ return -1; }
-
-        if(a.date > b.date){ return 1; }
-
         if(a.name < b.name){ return -1; }
 
         if(a.name > b.name){ return 1; }
+
+        if(a.date < b.date){ return -1; }
+
+        if(a.date > b.date){ return 1; }
 
         return 0;
 
@@ -3759,352 +3874,396 @@ function renderOwnerAttendance(){
 
   if(records.length === 0){
 
-    tbody.innerHTML =
-      "<tr><td colspan='8'>No attendance records found for " +
-      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear +
-      ".</td></tr>";
+    const emptyDiv =
+      document.createElement("div");
+
+    emptyDiv.className = "att-empty-message";
+
+    emptyDiv.textContent =
+      "No attendance records found for " +
+      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear + ".";
+
+    container.appendChild(emptyDiv);
 
     return;
 
   }
 
-  /* Grouped by (employee + date) together, NOT date alone -- since
-     the table can now show multiple different employees who happen
-     to share the same date, grouping by date only would incorrectly
-     merge different employees' hours into one "Daily Total" row. */
+  /* Two-level grouping: by employee, then by calendar date within
+     that employee -- this is what makes a date appear only ONCE per
+     employee, with every shift on that date listed underneath it
+     instead of repeating the date per shift. Purely a display
+     grouping -- every underlying record stays completely separate
+     (its own Check-In, Check-Out, Hours Worked, OT Hours, Edit,
+     Save, Accept/Decline), nothing is merged or duplicated. */
 
-  const dateGroups =
-    groupRecordsByEmployeeAndDate(records);
+  const employeeGroups =
+    groupRecordsByEmployeeThenDate(records);
 
-  dateGroups.forEach(function(group){
+  employeeGroups.forEach(function(empGroup){
 
-  group.rows.forEach(function(row){
+    const empBlock =
+      document.createElement("div");
 
-    const isOpenRecord =
-      row.status === "Open";
+    empBlock.className = "att-employee-block";
 
-    const isViewOnlyRecord =
-      isOpenRecord || row.status === "WO";
+    const empName =
+      document.createElement("div");
 
-    const isEditing =
-      !isViewOnlyRecord &&
-      !!editingRecord &&
-      (
-        editingRecord.rowId != null
-          ? editingRecord.rowId === row.rowId
-          : (editingRecord.name === row.name && editingRecord.date === row.date)
-      );
+    empName.className = "att-employee-name";
+    empName.textContent = empGroup.name;
 
-    const tr =
-      document.createElement("tr");
+    empBlock.appendChild(empName);
 
-    const nameCell =
-      document.createElement("td");
+    empGroup.dateGroups.forEach(function(dateGroup){
 
-    nameCell.textContent = row.name;
+      const dateBlock =
+        document.createElement("div");
 
-    const dateCell =
-      document.createElement("td");
+      dateBlock.className = "att-date-group";
 
-    const inCell =
-      document.createElement("td");
+      const dateLabel =
+        document.createElement("div");
 
-    const outCell =
-      document.createElement("td");
+      dateLabel.className = "att-date-label";
+      dateLabel.textContent = formatDateDisplay(dateGroup.date);
 
-    const hoursCell =
-      document.createElement("td");
+      dateBlock.appendChild(dateLabel);
 
-    hoursCell.textContent =
-      formatHoursDisplay(row.hoursWorked) || "-";
+      /* Shifts are numbered automatically from their order on that
+         date (1st record = Shift 1, 2nd = Shift 2, etc.) only when
+         there's more than one -- a single record on a date is just
+         shown as "Attendance", matching the existing single-shift
+         look elsewhere in the app. */
 
-    const otCell =
-      document.createElement("td");
+      dateGroup.rows.forEach(function(row,idx){
 
-    otCell.textContent =
-      row.otHours || "-";
+        dateBlock.appendChild(
+          buildOwnerShiftCard(row,dateGroup.rows.length >= 2 ? (idx + 1) : null)
+        );
 
-    const statusCell =
-      document.createElement("td");
+      });
 
-    const actionCell =
-      document.createElement("td");
+      if(dateGroup.rows.length >= 2){
 
-    actionCell.className =
-      "actions";
+        const totals =
+          computeGroupTotals(dateGroup.rows);
 
+        const totalDiv =
+          document.createElement("div");
 
-    if(isEditing){
+        totalDiv.className = "att-daily-total";
 
-      /* Editable In Time / Out Time for the "Edit -> Save" flow.
-         The Date itself is not editable -- it stays fixed to the
-         record's original date, which is also what keeps the Date
-         bug fix intact (no date field means no way to shift it).
-         Shown here in DD-MM-YYYY for display; <input type="time">
-         values use normalizeTime24() since they need the raw 24hr
-         value, never the 12hr AM/PM display text. */
+        totalDiv.textContent =
+          "Daily Total (" + dateGroup.rows.length + " shifts) — Hours: " +
+          formatHoursDisplay(totals.hoursWorked) + "  OT: " + totals.otHours;
 
-      dateCell.textContent = formatDateDisplay(row.date);
+        dateBlock.appendChild(totalDiv);
 
+      }
 
-      const inInput =
-        document.createElement("input");
+      empBlock.appendChild(dateBlock);
 
-      inInput.type = "time";
-      inInput.id = "editInTimeInput";
-      inInput.className = "cell-input";
-      inInput.value = normalizeTime24(row.inTime);
+    });
 
-      inCell.appendChild(inInput);
-
-
-      const outInput =
-        document.createElement("input");
-
-      outInput.type = "time";
-      outInput.id = "editOutTimeInput";
-      outInput.className = "cell-input";
-      outInput.value = normalizeTime24(row.outTime);
-
-      outCell.appendChild(outInput);
-
-
-      statusCell.innerHTML =
-        '<span class="status editing">Editing</span>';
-
-
-      const saveBtn =
-        document.createElement("button");
-
-      saveBtn.className = "success";
-      saveBtn.textContent = "Save";
-
-      saveBtn.onclick =
-        function(){
-
-          saveCorrectedAttendance(
-            row.name,
-            row.date,
-            row.rowId
-          );
-
-        };
-
-
-      const cancelBtn =
-        document.createElement("button");
-
-      cancelBtn.className = "secondary";
-      cancelBtn.textContent = "Cancel";
-
-      cancelBtn.onclick =
-        function(){
-
-          editingRecord = null;
-
-          renderOwnerAttendance();
-
-        };
-
-
-      actionCell.appendChild(saveBtn);
-
-      actionCell.appendChild(cancelBtn);
-
-    }else if(isViewOnlyRecord){
-
-      /* Employee is currently checked in (Open, hasn't tapped Submit
-         Attendance yet) or the date is an approved Week Off (WO) --
-         either way, show a view-only row with no Accept/Edit actions,
-         since there's nothing to approve. */
-
-      dateCell.textContent = formatDateDisplay(row.date);
-
-      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
-
-      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
-
-      statusCell.innerHTML =
-        statusBadge(row.status);
-
-      actionCell.textContent = "-";
-
-    }else{
-
-      dateCell.textContent = formatDateDisplay(row.date);
-
-      inCell.textContent = formatTimeDisplay(row.inTime) || "-";
-
-      outCell.textContent = formatTimeDisplay(row.outTime) || "-";
-
-      statusCell.innerHTML =
-        statusBadge(row.status);
-
-
-      const acceptBtn =
-        document.createElement("button");
-
-      acceptBtn.className =
-        "success";
-
-      acceptBtn.textContent =
-        "Accept";
-
-      acceptBtn.onclick =
-        function(){
-
-          changeStatus(
-            row.name,
-            row.date,
-            "Approved",
-            row.rowId
-          );
-
-        };
-
-
-      const declineBtn =
-        document.createElement("button");
-
-      declineBtn.className =
-        "danger";
-
-      declineBtn.textContent =
-        "Edit";
-
-      declineBtn.title =
-        "Correct the Check-In / Check-Out times and save";
-
-      declineBtn.onclick =
-        function(){
-
-          /* Opens the record up for correction. Nothing is written
-             to the sheet until "Save" is tapped. */
-
-          editingRecord = {
-            name: row.name,
-            date: row.date,
-            rowId: row.rowId
-          };
-
-          renderOwnerAttendance();
-
-        };
-
-
-      actionCell.appendChild(acceptBtn);
-
-      actionCell.appendChild(declineBtn);
-
-    }
-
-
-    tr.appendChild(nameCell);
-
-    tr.appendChild(dateCell);
-
-    tr.appendChild(inCell);
-
-    tr.appendChild(outCell);
-
-    tr.appendChild(hoursCell);
-
-    tr.appendChild(otCell);
-
-    tr.appendChild(statusCell);
-
-    tr.appendChild(actionCell);
-
-    tbody.appendChild(tr);
-
-  });
-
-  /* Multiple shifts for the SAME employee on the SAME date: each
-     shift stays its own row above (never merged/overwritten) -- this
-     just adds one extra read-only summary row showing that date's
-     combined Hours Worked and OT Hours for that employee, whenever
-     there's more than one shift to add up. */
-
-  if(group.rows.length >= 2){
-
-    const totals =
-      computeGroupTotals(group.rows);
-
-    const totalRow =
-      document.createElement("tr");
-
-    totalRow.style.fontWeight = "bold";
-    totalRow.style.background = "#f7f8fa";
-
-    const labelCell =
-      document.createElement("td");
-
-    labelCell.colSpan = 4;
-    labelCell.style.textAlign = "right";
-    labelCell.textContent =
-      group.name + " — Daily Total (" + group.rows.length + " shifts)";
-
-    const hoursCell =
-      document.createElement("td");
-
-    hoursCell.textContent = formatHoursDisplay(totals.hoursWorked);
-
-    const otCell =
-      document.createElement("td");
-
-    otCell.textContent = totals.otHours;
-
-    const statusCell =
-      document.createElement("td");
-
-    const actionCell =
-      document.createElement("td");
-
-    totalRow.appendChild(labelCell);
-    totalRow.appendChild(hoursCell);
-    totalRow.appendChild(otCell);
-    totalRow.appendChild(statusCell);
-    totalRow.appendChild(actionCell);
-
-    tbody.appendChild(totalRow);
-
-  }
+    container.appendChild(empBlock);
 
   });
 
 }
 
 
-/* Groups an already-sorted records array into consecutive runs that
-   share BOTH the same employee name AND the same date -- used only by
-   the all-employees "View Employee Attendance" table above, so that
-   two different employees who happen to share a date are never
-   merged into the same "Daily Total" row. (groupRecordsByDate() above
-   is unchanged and still used elsewhere, where records are already
-   scoped to a single employee.) */
+/* Builds one shift's card -- same view/edit/Accept/Edit behaviour as
+   the old table row, just laid out for the new mobile-friendly card
+   list instead of table cells. shiftNumber is null when the date has
+   only one record ("Attendance"), or 1/2/3... when there are multiple
+   shifts that date (each stays its own separate card, never merged). */
 
-function groupRecordsByEmployeeAndDate(records){
+function buildOwnerShiftCard(row,shiftNumber){
 
-  const groups = [];
+  const isOpenRecord =
+    row.status === "Open";
 
-  records.forEach(function(row){
+  const isViewOnlyRecord =
+    isOpenRecord || row.status === "WO";
 
-    const lastGroup =
-      groups[groups.length - 1];
+  const isEditing =
+    !isViewOnlyRecord &&
+    !!editingRecord &&
+    (
+      editingRecord.rowId != null
+        ? editingRecord.rowId === row.rowId
+        : (editingRecord.name === row.name && editingRecord.date === row.date)
+    );
 
-    if(lastGroup && lastGroup.date === row.date && lastGroup.name === row.name){
+  const card =
+    document.createElement("div");
 
-      lastGroup.rows.push(row);
+  card.className = "att-shift-card";
+
+
+  const header =
+    document.createElement("div");
+
+  header.className = "att-shift-header";
+
+  const shiftLabel =
+    document.createElement("span");
+
+  shiftLabel.textContent =
+    shiftNumber ? ("Shift " + shiftNumber) : "Attendance";
+
+  header.appendChild(shiftLabel);
+
+  const statusSpan =
+    document.createElement("span");
+
+  if(isEditing){
+    statusSpan.innerHTML = '<span class="status editing">Editing</span>';
+  }else{
+    statusSpan.innerHTML = statusBadge(row.status);
+  }
+
+  header.appendChild(statusSpan);
+
+  card.appendChild(header);
+
+
+  const fields =
+    document.createElement("div");
+
+  fields.className = "att-shift-fields";
+
+  function addField(labelText,valueOrNode){
+
+    const field =
+      document.createElement("div");
+
+    field.className = "att-shift-field";
+
+    const label =
+      document.createElement("div");
+
+    label.className = "att-shift-field-label";
+    label.textContent = labelText;
+
+    field.appendChild(label);
+
+    if(typeof valueOrNode === "string"){
+
+      const value =
+        document.createElement("div");
+
+      value.className = "att-shift-field-value";
+      value.textContent = valueOrNode;
+
+      field.appendChild(value);
 
     }else{
 
-      groups.push({ date: row.date, name: row.name, rows: [row] });
+      field.appendChild(valueOrNode);
 
     }
 
+    fields.appendChild(field);
+
+  }
+
+  if(isEditing){
+
+    /* Editable In Time / Out Time for the "Edit -> Save" flow. The
+       Date itself is not editable -- it stays fixed to the record's
+       original date. <input type="time"> needs the raw 24hr value,
+       never the 12hr AM/PM display text -- see normalizeTime24(). */
+
+    const inInput =
+      document.createElement("input");
+
+    inInput.type = "time";
+    inInput.id = "editInTimeInput";
+    inInput.className = "cell-input";
+    inInput.value = normalizeTime24(row.inTime);
+
+    addField("In Time",inInput);
+
+
+    const outInput =
+      document.createElement("input");
+
+    outInput.type = "time";
+    outInput.id = "editOutTimeInput";
+    outInput.className = "cell-input";
+    outInput.value = normalizeTime24(row.outTime);
+
+    addField("Out Time",outInput);
+
+  }else{
+
+    addField("In Time",formatTimeDisplay(row.inTime) || "-");
+
+    addField("Out Time",formatTimeDisplay(row.outTime) || "-");
+
+  }
+
+  /* Hours Worked / OT Hours are always shown regardless of editing
+     state -- same as before (they only change once "Save" recomputes
+     and reloads them). */
+
+  addField("Hours Worked",formatHoursDisplay(row.hoursWorked) || "-");
+
+  addField("OT Hours",row.otHours || "-");
+
+  card.appendChild(fields);
+
+
+  const actions =
+    document.createElement("div");
+
+  actions.className = "att-shift-actions";
+
+  if(isEditing){
+
+    const saveBtn =
+      document.createElement("button");
+
+    saveBtn.className = "success";
+    saveBtn.textContent = "Save";
+
+    saveBtn.onclick =
+      function(){
+
+        saveCorrectedAttendance(
+          row.name,
+          row.date,
+          row.rowId
+        );
+
+      };
+
+
+    const cancelBtn =
+      document.createElement("button");
+
+    cancelBtn.className = "secondary";
+    cancelBtn.textContent = "Cancel";
+
+    cancelBtn.onclick =
+      function(){
+
+        editingRecord = null;
+
+        renderOwnerAttendance();
+
+      };
+
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+
+    card.appendChild(actions);
+
+  }else if(!isViewOnlyRecord){
+
+    /* Employee currently checked in (Open, hasn't tapped Submit
+       Attendance yet) or an approved Week Off (WO) -- either way,
+       nothing to approve, so no action buttons for those. */
+
+    const acceptBtn =
+      document.createElement("button");
+
+    acceptBtn.className = "success";
+    acceptBtn.textContent = "Accept";
+
+    acceptBtn.onclick =
+      function(){
+
+        changeStatus(
+          row.name,
+          row.date,
+          "Approved",
+          row.rowId
+        );
+
+      };
+
+
+    const editBtn =
+      document.createElement("button");
+
+    editBtn.className = "danger";
+    editBtn.textContent = "Edit";
+    editBtn.title = "Correct the Check-In / Check-Out times and save";
+
+    editBtn.onclick =
+      function(){
+
+        /* Opens the record up for correction. Nothing is written to
+           the sheet until "Save" is tapped. */
+
+        editingRecord = {
+          name: row.name,
+          date: row.date,
+          rowId: row.rowId
+        };
+
+        renderOwnerAttendance();
+
+      };
+
+
+    actions.appendChild(acceptBtn);
+    actions.appendChild(editBtn);
+
+    card.appendChild(actions);
+
+  }
+
+  return card;
+
+}
+
+
+/* Groups an already-sorted (by name, then date) records array into
+   employee blocks, each containing that employee's dates in order,
+   each date containing its own shift rows. This is what makes a
+   calendar date appear only ONCE per employee -- multiple shifts on
+   that date become separate cards WITHIN that one date group, never
+   a repeated date. Purely a display grouping: it does not merge,
+   duplicate, or alter any underlying record. */
+
+function groupRecordsByEmployeeThenDate(records){
+
+  const employeeGroups = [];
+
+  records.forEach(function(row){
+
+    let empGroup =
+      employeeGroups[employeeGroups.length - 1];
+
+    if(!empGroup || empGroup.name !== row.name){
+
+      empGroup = { name: row.name, dateGroups: [] };
+
+      employeeGroups.push(empGroup);
+
+    }
+
+    let dateGroup =
+      empGroup.dateGroups[empGroup.dateGroups.length - 1];
+
+    if(!dateGroup || dateGroup.date !== row.date){
+
+      dateGroup = { date: row.date, rows: [] };
+
+      empGroup.dateGroups.push(dateGroup);
+
+    }
+
+    dateGroup.rows.push(row);
+
   });
 
-  return groups;
+  return employeeGroups;
 
 }
 

@@ -1161,69 +1161,56 @@ th{
       Check-In and Check-Out times, then tap <b>Save</b>.
     </p>
 
-    <label>Select Employee</label>
+    <label>Select Month</label>
 
-    <select id="ownerViewEmployee" onchange="onOwnerViewEmployeeChange()">
-      <option value="">Select employee</option>
-    </select>
+    <input type="month" id="ownerSelectMonth" onchange="onOwnerSelectMonthChange()">
 
-    <div id="ownerViewEmptyMessage" class="message">
-      Select an employee above to view their attendance.
+    <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;margin:8px 0;"></div>
+
+    <div class="summary-heading">
+
+      <span id="ownerSummaryMonthLabel">Attendance Summary</span>
+
+      <div class="summary-month-nav">
+
+        <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(-1)">‹ Prev</button>
+
+        <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(1)">Next ›</button>
+
+      </div>
+
     </div>
 
-    <div id="ownerViewPanel" class="hidden">
+    <div class="summary-grid">
 
-      <div class="row-flex" style="flex-wrap:wrap;margin-top:6px;">
-
-        <h3 id="ownerViewEmployeeName" style="margin:0;"></h3>
-
-        <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;"></div>
-
+      <div class="summary-card">
+        <div class="summary-card-title"><span class="summary-card-icon">📅</span> Total Working Days</div>
+        <div class="summary-card-value" id="ownerSummaryWorkingDays">0 Days</div>
       </div>
 
-      <div class="summary-heading">
-
-        <span id="ownerSummaryMonthLabel">Attendance Summary</span>
-
-        <div class="summary-month-nav">
-
-          <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(-1)">‹ Prev</button>
-
-          <button type="button" class="secondary" onclick="changeOwnerSummaryMonth(1)">Next ›</button>
-
-        </div>
-
+      <div class="summary-card">
+        <div class="summary-card-title"><span class="summary-card-icon">🕐</span> Total OT Hours</div>
+        <div class="summary-card-value" id="ownerSummaryOTHours">0h 0m</div>
       </div>
 
-      <div class="summary-grid">
+    </div>
 
-        <div class="summary-card">
-          <div class="summary-card-title"><span class="summary-card-icon">📅</span> Total Working Days</div>
-          <div class="summary-card-value" id="ownerSummaryWorkingDays">0 Days</div>
-        </div>
+    <div class="table-wrap">
 
-        <div class="summary-card">
-          <div class="summary-card-title"><span class="summary-card-icon">🕐</span> Total OT Hours</div>
-          <div class="summary-card-value" id="ownerSummaryOTHours">0h 0m</div>
-        </div>
+      <table>
 
-      </div>
+        <thead>
 
-      <div class="table-wrap">
-
-        <table>
-
-          <thead>
-
-            <tr>
-              <th>Date</th>
-              <th>In Time</th>
-              <th>Out Time</th>
-              <th>Hours Worked</th>
-              <th>OT Hours</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
 
           </thead>
 
@@ -1234,8 +1221,6 @@ th{
       </div>
 
     </div>
-
-  </div>
 
 
   <!-- SECTION 2: ATTENDANCE DOWNLOAD & DELETE -->
@@ -2687,6 +2672,8 @@ function openOwnerScreen(){
 
   editingEmployee = null;
 
+  syncOwnerSelectMonthInput();
+
   renderOwnerAttendance();
 
   renderManualRequests();
@@ -2752,6 +2739,14 @@ function openOwnerSection(sectionNumber){
     if(section){
       section.classList.toggle("hidden",i !== sectionNumber);
     }
+
+  }
+
+  if(sectionNumber === 1){
+
+    markCurrentMonthPendingAsRead();
+
+    renderOwnerAttendance();
 
   }
 
@@ -2878,14 +2873,7 @@ async function ownerAttendancePollTick(){
 
   updateViewAttendanceBadge();
 
-  const select =
-    document.getElementById("ownerViewEmployee");
-
-  if(select && select.value){
-
-    renderOwnerAttendance();
-
-  }
+  renderOwnerAttendance();
 
 }
 
@@ -3733,49 +3721,7 @@ function renderOwnerAttendance(){
   const tbody =
     document.getElementById("ownerTable");
 
-  const emptyMessage =
-    document.getElementById("ownerViewEmptyMessage");
-
-  const panel =
-    document.getElementById("ownerViewPanel");
-
-  const select =
-    document.getElementById("ownerViewEmployee");
-
-  const selectedName =
-    select ? select.value : "";
-
   tbody.innerHTML = "";
-
-  if(!selectedName){
-
-    /* No employee chosen yet -- per spec, the dashboard should NOT
-       show any attendance until the Owner picks someone. */
-
-    if(emptyMessage){
-      emptyMessage.classList.remove("hidden");
-    }
-
-    if(panel){
-      panel.classList.add("hidden");
-    }
-
-    return;
-
-  }
-
-  if(emptyMessage){
-    emptyMessage.classList.add("hidden");
-  }
-
-  if(panel){
-    panel.classList.remove("hidden");
-  }
-
-  document
-    .getElementById("ownerViewEmployeeName")
-    .textContent =
-    selectedName;
 
   const todayInfo =
     document.getElementById("ownerViewTodayInfo");
@@ -3785,18 +3731,25 @@ function renderOwnerAttendance(){
       "Today: " + formatOwnerViewToday();
   }
 
+  /* No more "Select Employee" gate -- View Employee Attendance now
+     shows every employee's attendance for the selected month
+     directly, driven by ownerSummaryYear/ownerSummaryMonth (the same
+     state the Select Month picker, Prev/Next, and the Attendance
+     Summary cards all share). Accept/Edit still work exactly as
+     before -- each button still acts on that specific row's own
+     name/date/rowId, regardless of there being no employee filter. */
+
   const records =
-    allData.attendance
-      .filter(function(row){
-
-        return row.name === selectedName;
-
-      })
+    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
       .sort(function(a,b){
 
         if(a.date < b.date){ return -1; }
 
         if(a.date > b.date){ return 1; }
+
+        if(a.name < b.name){ return -1; }
+
+        if(a.name > b.name){ return 1; }
 
         return 0;
 
@@ -3807,16 +3760,21 @@ function renderOwnerAttendance(){
   if(records.length === 0){
 
     tbody.innerHTML =
-      "<tr><td colspan='7'>No attendance records for " +
-      selectedName +
+      "<tr><td colspan='8'>No attendance records found for " +
+      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear +
       ".</td></tr>";
 
     return;
 
   }
 
+  /* Grouped by (employee + date) together, NOT date alone -- since
+     the table can now show multiple different employees who happen
+     to share the same date, grouping by date only would incorrectly
+     merge different employees' hours into one "Daily Total" row. */
+
   const dateGroups =
-    groupRecordsByDate(records);
+    groupRecordsByEmployeeAndDate(records);
 
   dateGroups.forEach(function(group){
 
@@ -3839,6 +3797,11 @@ function renderOwnerAttendance(){
 
     const tr =
       document.createElement("tr");
+
+    const nameCell =
+      document.createElement("td");
+
+    nameCell.textContent = row.name;
 
     const dateCell =
       document.createElement("td");
@@ -4036,6 +3999,8 @@ function renderOwnerAttendance(){
     }
 
 
+    tr.appendChild(nameCell);
+
     tr.appendChild(dateCell);
 
     tr.appendChild(inCell);
@@ -4054,10 +4019,11 @@ function renderOwnerAttendance(){
 
   });
 
-  /* Multiple shifts on the same date: each shift stays its own row
-     above (never merged/overwritten) -- this just adds one extra
-     read-only summary row showing that date's combined Hours Worked
-     and OT Hours, whenever there's more than one shift to add up. */
+  /* Multiple shifts for the SAME employee on the SAME date: each
+     shift stays its own row above (never merged/overwritten) -- this
+     just adds one extra read-only summary row showing that date's
+     combined Hours Worked and OT Hours for that employee, whenever
+     there's more than one shift to add up. */
 
   if(group.rows.length >= 2){
 
@@ -4073,10 +4039,10 @@ function renderOwnerAttendance(){
     const labelCell =
       document.createElement("td");
 
-    labelCell.colSpan = 3;
+    labelCell.colSpan = 4;
     labelCell.style.textAlign = "right";
     labelCell.textContent =
-      "Daily Total (" + group.rows.length + " shifts)";
+      group.name + " — Daily Total (" + group.rows.length + " shifts)";
 
     const hoursCell =
       document.createElement("td");
@@ -4109,39 +4075,62 @@ function renderOwnerAttendance(){
 }
 
 
-/* Fires when the Owner picks (or clears) an employee in the "Select
-   Employee" dropdown on the dashboard. */
+/* Groups an already-sorted records array into consecutive runs that
+   share BOTH the same employee name AND the same date -- used only by
+   the all-employees "View Employee Attendance" table above, so that
+   two different employees who happen to share a date are never
+   merged into the same "Daily Total" row. (groupRecordsByDate() above
+   is unchanged and still used elsewhere, where records are already
+   scoped to a single employee.) */
 
-function onOwnerViewEmployeeChange(){
+function groupRecordsByEmployeeAndDate(records){
 
-  const select =
-    document.getElementById("ownerViewEmployee");
+  const groups = [];
 
-  const selectedName =
-    select ? select.value : "";
+  records.forEach(function(row){
 
-  /* Marking as read happens HERE -- scoped to only the employee the
-     Owner actually selected/viewed, not every employee's pending
-     submissions at once. This is what makes an unrelated employee's
-     new submission keep showing as unread even while the Owner is
-     looking at a different employee's attendance. */
+    const lastGroup =
+      groups[groups.length - 1];
 
-  if(selectedName){
+    if(lastGroup && lastGroup.date === row.date && lastGroup.name === row.name){
 
-    const pendingRowIds =
-      allData.attendance
-        .filter(function(row){
-          return row.name === selectedName && row.status === "Pending";
-        })
-        .map(function(row){ return row.rowId; });
+      lastGroup.rows.push(row);
 
-    markAttendanceRowsAsRead(pendingRowIds);
+    }else{
 
-    updateViewAttendanceBadge();
+      groups.push({ date: row.date, name: row.name, rows: [row] });
 
-  }
+    }
 
-  renderOwnerAttendance();
+  });
+
+  return groups;
+
+}
+
+
+/* Marks every currently-Pending row IN THE SELECTED MONTH (across all
+   employees) as read. This is the month-scoped equivalent of the old
+   per-employee-selection marking -- now that "View Employee
+   Attendance" has no employee filter, "viewing" means opening the
+   tile or changing to a given month, so that's what triggers this
+   (see openOwnerSection(1), changeOwnerSummaryMonth(), and
+   onOwnerSelectMonthChange() below). Accept/Edit still additionally
+   mark their own specific row read too, unchanged. */
+
+function markCurrentMonthPendingAsRead(){
+
+  const monthRecords =
+    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth);
+
+  const pendingRowIds =
+    monthRecords
+      .filter(function(row){ return row.status === "Pending"; })
+      .map(function(row){ return row.rowId; });
+
+  markAttendanceRowsAsRead(pendingRowIds);
+
+  updateViewAttendanceBadge();
 
 }
 
@@ -5138,12 +5127,67 @@ function changeOwnerSummaryMonth(delta){
     ownerSummaryYear++;
   }
 
-  renderOwnerAttendanceSummary();
+  markCurrentMonthPendingAsRead();
+
+  renderOwnerAttendance();
+
+}
+
+
+/* "Select Month" picker (<input type="month">, value "YYYY-MM") --
+   lets the Owner jump straight to a month/year instead of only
+   stepping with Prev/Next. Both controls drive the same
+   ownerSummaryYear/ownerSummaryMonth state, so they always agree. */
+
+function onOwnerSelectMonthChange(){
+
+  const input =
+    document.getElementById("ownerSelectMonth");
+
+  const value =
+    input ? input.value : "";
+
+  if(value){
+
+    const parts =
+      value.split("-");
+
+    const y =
+      parseInt(parts[0],10);
+
+    const m =
+      parseInt(parts[1],10) - 1;
+
+    if(!isNaN(y) && !isNaN(m)){
+      ownerSummaryYear = y;
+      ownerSummaryMonth = m;
+    }
+
+  }
+
+  markCurrentMonthPendingAsRead();
+
+  renderOwnerAttendance();
+
+}
+
+
+function syncOwnerSelectMonthInput(){
+
+  const input =
+    document.getElementById("ownerSelectMonth");
+
+  if(input){
+    input.value =
+      ownerSummaryYear + "-" + String(ownerSummaryMonth + 1).padStart(2,"0");
+  }
 
 }
 
 
 function renderOwnerAttendanceSummary(){
+
+  syncOwnerSelectMonthInput();
 
   const labelEl =
     document.getElementById("ownerSummaryMonthLabel");
@@ -5159,38 +5203,56 @@ function renderOwnerAttendanceSummary(){
   const otHoursEl =
     document.getElementById("ownerSummaryOTHours");
 
-  const select =
-    document.getElementById("ownerViewEmployee");
-
-  const selectedName =
-    select ? select.value : "";
-
-  if(!selectedName){
-
-    if(workingDaysEl){ workingDaysEl.textContent = formatWorkingDaysLabel(0); }
-
-    if(otHoursEl){ otHoursEl.textContent = "0h 0m"; }
-
-    return;
-
-  }
-
-  const employeeRecords =
-    allData.attendance.filter(function(row){
-      return row.name === selectedName;
-    });
-
   const monthRecords =
-    filterRecordsByMonth(employeeRecords,ownerSummaryYear,ownerSummaryMonth);
+    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth);
+
+  /* Company-wide total, computed per employee first (using the exact
+     same unchanged computeTotalWorkingDays()/computeTotalOTHours()
+     functions) and then summed -- NOT by mixing every employee's rows
+     together first, since that would incorrectly merge different
+     employees' hours if they happen to share a date. */
+
+  const recordsByEmployee = {};
+
+  monthRecords.forEach(function(row){
+
+    if(!recordsByEmployee[row.name]){
+      recordsByEmployee[row.name] = [];
+    }
+
+    recordsByEmployee[row.name].push(row);
+
+  });
+
+  let totalWorkingDays = 0;
+
+  let totalOTHours = 0;
+
+  Object.keys(recordsByEmployee).forEach(function(name){
+
+    const employeeRecords =
+      recordsByEmployee[name];
+
+    totalWorkingDays +=
+      computeTotalWorkingDays(employeeRecords);
+
+    const employeeOT =
+      parseFloat(computeTotalOTHours(employeeRecords));
+
+    if(!isNaN(employeeOT)){
+      totalOTHours += employeeOT;
+    }
+
+  });
 
   if(workingDaysEl){
     workingDaysEl.textContent =
-      formatWorkingDaysLabel(computeTotalWorkingDays(monthRecords));
+      formatWorkingDaysLabel(totalWorkingDays);
   }
 
   if(otHoursEl){
     otHoursEl.textContent =
-      formatHoursMinutesLong(computeTotalOTHours(monthRecords));
+      formatHoursMinutesLong(totalOTHours.toFixed(2));
   }
 
 }

@@ -293,15 +293,14 @@ th{
 }
 
 .att-columns-heading{
-  display:grid;
-  grid-template-columns: 66px 96px 96px 60px 52px 90px 1fr;
-  gap:8px;
-  min-width:520px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 10px;
   padding:0 16px;
-  font-size:10px;
+  font-size:11px;
   font-weight:bold;
   text-transform:uppercase;
-  letter-spacing:.04em;
+  letter-spacing:.03em;
   color:#8b93a1;
   margin-top:10px;
 }
@@ -403,14 +402,6 @@ th{
   background:white;
   border:1px solid #e3e7ed;
   border-radius:14px;
-}
-
-@media(max-width:600px){
-
-  .att-columns-heading{
-    display:none;
-  }
-
 }
 
 .badge{
@@ -1318,8 +1309,6 @@ th{
     <label>Select Month</label>
 
     <input type="month" id="ownerSelectMonth" onchange="onOwnerSelectMonthChange()">
-
-    <div id="ownerViewTodayInfo" style="font-size:13px;color:#596273;margin:8px 0;"></div>
 
     <div class="summary-heading">
 
@@ -3854,14 +3843,6 @@ function renderOwnerAttendance(){
 
   container.innerHTML = "";
 
-  const todayInfo =
-    document.getElementById("ownerViewTodayInfo");
-
-  if(todayInfo){
-    todayInfo.textContent =
-      "Today: " + formatOwnerViewToday();
-  }
-
   /* No "Select Employee" gate -- View Employee Attendance shows every
      employee's attendance for the selected month directly, driven by
      ownerSummaryYear/ownerSummaryMonth (the same state the Select
@@ -3950,8 +3931,10 @@ function renderOwnerAttendance(){
     columnsHeading.className = "att-columns-heading";
 
     columnsHeading.innerHTML =
-      "<div>Shift</div><div>In Time</div><div>Out Time</div>" +
-      "<div>Hours</div><div>OT</div><div>Status</div><div>Action</div>";
+      "<span>Date</span><span>|</span><span>Day</span><span>|</span>" +
+      "<span>In Time</span><span>|</span><span>Out Time</span><span>|</span>" +
+      "<span>Hours Worked</span><span>|</span><span>OT Hours</span><span>|</span>" +
+      "<span>Status</span>";
 
     empBlock.appendChild(columnsHeading);
 
@@ -3982,33 +3965,54 @@ function renderOwnerAttendance(){
          date (1st record = Shift 1, 2nd = Shift 2, etc.) ONLY when
          there's more than one -- a single record on a date shows no
          shift label at all, just the attendance details, per the
-         required shift rule. */
+         required shift rule.
+
+         For a multi-shift date: every shift keeps its own In Time /
+         Out Time / Status / Accept / Edit exactly as its own separate
+         record (never merged in the data). Only the DISPLAYED Hours
+         Worked / OT Hours differ: earlier shifts show blank OT (OT is
+         a whole-day concept, never calculated per shift), and the
+         LAST shift's row shows the day's CUMULATIVE Hours Worked and
+         OT Hours (computed the same way as before, via the unchanged
+         computeGroupTotals()) instead of its own individual duration
+         -- this is what replaces the old separate "Daily Total" row. */
+
+      const isMultiShift =
+        dateGroup.rows.length >= 2;
 
       dateGroup.rows.forEach(function(row,idx){
 
+        const isLastShift =
+          idx === dateGroup.rows.length - 1;
+
+        let displayHours = row.hoursWorked;
+
+        let displayOT = row.otHours;
+
+        if(isMultiShift){
+
+          if(isLastShift){
+
+            const totals =
+              computeGroupTotals(dateGroup.rows);
+
+            displayHours = totals.hoursWorked;
+
+            displayOT = totals.otHours;
+
+          }else{
+
+            displayOT = "";
+
+          }
+
+        }
+
         rowsScroll.appendChild(
-          buildOwnerShiftRow(row,dateGroup.rows.length >= 2 ? (idx + 1) : null)
+          buildOwnerShiftRow(row,isMultiShift ? (idx + 1) : null,displayHours,displayOT)
         );
 
       });
-
-      if(dateGroup.rows.length >= 2){
-
-        const totals =
-          computeGroupTotals(dateGroup.rows);
-
-        const totalDiv =
-          document.createElement("div");
-
-        totalDiv.className = "att-daily-total-row";
-
-        totalDiv.textContent =
-          "Daily Total (" + dateGroup.rows.length + " shifts) — Hours: " +
-          formatHoursDisplay(totals.hoursWorked) + "  OT: " + formatOTDisplay(totals.otHours);
-
-        rowsScroll.appendChild(totalDiv);
-
-      }
 
       dateBlock.appendChild(rowsScroll);
 
@@ -4090,7 +4094,15 @@ function formatOTDisplay(otHoursValue){
    the required shift rule), or 1/2/3... when there are multiple
    shifts that date (each stays its own separate row, never merged). */
 
-function buildOwnerShiftRow(row,shiftNumber){
+function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
+
+  if(displayHours === undefined){
+    displayHours = row.hoursWorked;
+  }
+
+  if(displayOT === undefined){
+    displayOT = row.otHours;
+  }
 
   const isOpenRecord =
     row.status === "Open";
@@ -4189,7 +4201,7 @@ function buildOwnerShiftRow(row,shiftNumber){
     document.createElement("div");
 
   hoursCell.className = "att-col-value";
-  hoursCell.textContent = formatHoursDisplay(row.hoursWorked) || "-";
+  hoursCell.textContent = formatHoursDisplay(displayHours) || "-";
 
   rowEl.appendChild(hoursCell);
 
@@ -4198,7 +4210,7 @@ function buildOwnerShiftRow(row,shiftNumber){
     document.createElement("div");
 
   otCell.className = "att-col-muted";
-  otCell.textContent = formatOTDisplay(row.otHours);
+  otCell.textContent = formatOTDisplay(displayOT);
 
   rowEl.appendChild(otCell);
 

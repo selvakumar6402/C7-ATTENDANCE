@@ -259,19 +259,24 @@ th{
 
 }
 
-/* ================= ATTENDANCE LIST (Owner: View Employee Attendance) =================
- * Card-based, grouped-by-employee-then-date layout. Replaces the old
- * wide table (which cut off columns on mobile and repeated the date
- * for every shift). Each calendar date appears once per employee;
- * multiple shifts on that date are separate shift cards underneath
- * it, never merged as data -- only the display groups them. */
+/* ================= ATTENDANCE REGISTER (Owner: View Employee Attendance) =================
+ * Clean calendar/register-style layout: ONE unified container, each
+ * date is a row-group (not a boxed card), multiple shifts on that
+ * date are aligned sub-rows underneath it, with a subtle separator
+ * between dates. Never a separate large box per shift or per day --
+ * this is a display/grouping change only, every underlying record
+ * stays completely separate. */
 
 .att-list{
   margin-top:10px;
 }
 
 .att-employee-block{
-  margin-bottom:20px;
+  margin-bottom:18px;
+  background:white;
+  border:1px solid #e3e7ed;
+  border-radius:14px;
+  overflow:hidden;
 }
 
 .att-employee-block:last-child{
@@ -280,108 +285,114 @@ th{
 
 .att-employee-name{
   font-weight:bold;
-  font-size:15px;
-  color:#1e293b;
-  margin-bottom:10px;
-  padding-bottom:6px;
-  border-bottom:2px solid #e3e7ed;
-}
-
-.att-date-group{
-  background:#f7f8fa;
-  border:1px solid #e3e7ed;
-  border-radius:12px;
-  padding:12px;
-  margin-bottom:10px;
-}
-
-.att-date-group:last-child{
-  margin-bottom:0;
-}
-
-.att-date-label{
-  font-weight:bold;
   font-size:14px;
   color:#1e293b;
-  margin-bottom:10px;
+  padding:12px 16px;
+  background:#f7f8fa;
+  border-bottom:1px solid #e3e7ed;
 }
 
-.att-shift-card{
-  background:white;
-  border:1px solid #e3e7ed;
-  border-radius:10px;
-  padding:10px 12px;
-  margin-bottom:8px;
+.att-columns-heading{
+  display:grid;
+  grid-template-columns: 66px 96px 96px 60px 52px 90px 1fr;
+  gap:8px;
+  min-width:520px;
+  padding:0 16px;
+  font-size:10px;
+  font-weight:bold;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:#8b93a1;
+  margin-top:10px;
 }
 
-.att-shift-card:last-child{
-  margin-bottom:0;
+.att-date-block{
+  padding:12px 16px;
+  border-bottom:1px solid #eef0f4;
 }
 
-.att-shift-header{
+.att-date-block:last-child{
+  border-bottom:none;
+}
+
+.att-date-heading{
   display:flex;
-  justify-content:space-between;
   align-items:center;
-  flex-wrap:wrap;
   gap:6px;
   font-weight:bold;
-  font-size:13px;
-  color:#596273;
-  margin-bottom:8px;
-}
-
-.att-shift-fields{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px 20px;
-  margin-bottom:8px;
-}
-
-.att-shift-field{
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  min-width:78px;
-}
-
-.att-shift-field-label{
-  font-size:11px;
-  color:#8b93a1;
-  text-transform:uppercase;
-  letter-spacing:.03em;
-}
-
-.att-shift-field-value{
   font-size:14px;
   color:#1e293b;
-  font-weight:600;
+  margin-bottom:6px;
 }
 
-.att-shift-field input[type="time"]{
-  margin:0;
-  padding:6px 8px;
-  font-size:13px;
-}
-
-.att-shift-actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-}
-
-.att-shift-actions button{
-  padding:7px 12px;
-  font-size:13px;
-}
-
-.att-daily-total{
-  text-align:right;
-  font-weight:bold;
+.att-date-heading .att-weekday{
+  font-weight:normal;
+  color:#8b93a1;
   font-size:12px;
+}
+
+.att-rows-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+
+.att-shift-row{
+  display:grid;
+  grid-template-columns: 66px 96px 96px 60px 52px 90px 1fr;
+  align-items:center;
+  gap:8px;
+  min-width:520px;
+  padding:7px 0;
+  font-size:13px;
+}
+
+.att-shift-row + .att-shift-row{
+  border-top:1px dashed #eef0f4;
+}
+
+.att-shift-label{
+  color:#596273;
+  font-weight:600;
+  font-size:12px;
+}
+
+.att-col-value{
   color:#1e293b;
+  font-weight:600;
+  white-space:nowrap;
+}
+
+.att-col-muted{
+  color:#8b93a1;
+}
+
+.att-row-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:nowrap;
+}
+
+.att-row-actions button{
+  padding:5px 10px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.att-row-actions input[type="time"]{
+  margin:0;
+  padding:5px 6px;
+  font-size:12px;
+  min-width:0;
+}
+
+.att-daily-total-row{
+  margin-top:4px;
+  padding-top:6px;
   border-top:1px dashed #d5dbe5;
-  padding-top:8px;
-  margin-top:2px;
+  text-align:right;
+  font-size:12px;
+  font-weight:bold;
+  color:#1e293b;
 }
 
 .att-empty-message{
@@ -389,8 +400,17 @@ th{
   text-align:center;
   color:#596273;
   font-size:14px;
-  background:#f7f8fa;
-  border-radius:12px;
+  background:white;
+  border:1px solid #e3e7ed;
+  border-radius:14px;
+}
+
+@media(max-width:600px){
+
+  .att-columns-heading{
+    display:none;
+  }
+
 }
 
 .badge{
@@ -3849,6 +3869,12 @@ function renderOwnerAttendance(){
      share). Accept/Edit still work exactly as before -- each button
      still acts on that specific row's own name/date/rowId.
 
+     EXCLUDED_ATTENDANCE_NAMES filters out a specific unwanted name
+     from DISPLAY only (e.g. "SELVAKUMAR(CREATOR)") -- the underlying
+     Attendance sheet rows are never touched, deleted, or modified by
+     this; a differently-named record like "selvakumar" is completely
+     unaffected and still shows normally.
+
      Sorted by employee name first, then date, so each employee's
      records form one contiguous block with their dates in
      chronological order underneath -- this is what
@@ -3856,6 +3882,9 @@ function renderOwnerAttendance(){
 
   const records =
     filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
+      .filter(function(row){
+        return !isExcludedAttendanceName(row.name);
+      })
       .sort(function(a,b){
 
         if(a.name < b.name){ return -1; }
@@ -3891,11 +3920,11 @@ function renderOwnerAttendance(){
 
   /* Two-level grouping: by employee, then by calendar date within
      that employee -- this is what makes a date appear only ONCE per
-     employee, with every shift on that date listed underneath it
-     instead of repeating the date per shift. Purely a display
-     grouping -- every underlying record stays completely separate
-     (its own Check-In, Check-Out, Hours Worked, OT Hours, Edit,
-     Save, Accept/Decline), nothing is merged or duplicated. */
+     employee, with every shift on that date listed underneath it as
+     aligned sub-rows instead of repeating the date per shift. Purely
+     a display grouping -- every underlying record stays completely
+     separate (its own Check-In, Check-Out, Hours Worked, OT Hours,
+     Edit, Save, Accept/Decline), nothing is merged or duplicated. */
 
   const employeeGroups =
     groupRecordsByEmployeeThenDate(records);
@@ -3915,31 +3944,50 @@ function renderOwnerAttendance(){
 
     empBlock.appendChild(empName);
 
+    const columnsHeading =
+      document.createElement("div");
+
+    columnsHeading.className = "att-columns-heading";
+
+    columnsHeading.innerHTML =
+      "<div>Shift</div><div>In Time</div><div>Out Time</div>" +
+      "<div>Hours</div><div>OT</div><div>Status</div><div>Action</div>";
+
+    empBlock.appendChild(columnsHeading);
+
     empGroup.dateGroups.forEach(function(dateGroup){
 
       const dateBlock =
         document.createElement("div");
 
-      dateBlock.className = "att-date-group";
+      dateBlock.className = "att-date-block";
 
-      const dateLabel =
+      const dateHeading =
         document.createElement("div");
 
-      dateLabel.className = "att-date-label";
-      dateLabel.textContent = formatDateDisplay(dateGroup.date);
+      dateHeading.className = "att-date-heading";
 
-      dateBlock.appendChild(dateLabel);
+      dateHeading.innerHTML =
+        "📅 " + formatDateDisplay(dateGroup.date) +
+        ' <span class="att-weekday">(' + formatWeekdayShort(dateGroup.date) + ')</span>';
+
+      dateBlock.appendChild(dateHeading);
+
+      const rowsScroll =
+        document.createElement("div");
+
+      rowsScroll.className = "att-rows-scroll";
 
       /* Shifts are numbered automatically from their order on that
-         date (1st record = Shift 1, 2nd = Shift 2, etc.) only when
-         there's more than one -- a single record on a date is just
-         shown as "Attendance", matching the existing single-shift
-         look elsewhere in the app. */
+         date (1st record = Shift 1, 2nd = Shift 2, etc.) ONLY when
+         there's more than one -- a single record on a date shows no
+         shift label at all, just the attendance details, per the
+         required shift rule. */
 
       dateGroup.rows.forEach(function(row,idx){
 
-        dateBlock.appendChild(
-          buildOwnerShiftCard(row,dateGroup.rows.length >= 2 ? (idx + 1) : null)
+        rowsScroll.appendChild(
+          buildOwnerShiftRow(row,dateGroup.rows.length >= 2 ? (idx + 1) : null)
         );
 
       });
@@ -3952,15 +4000,17 @@ function renderOwnerAttendance(){
         const totalDiv =
           document.createElement("div");
 
-        totalDiv.className = "att-daily-total";
+        totalDiv.className = "att-daily-total-row";
 
         totalDiv.textContent =
           "Daily Total (" + dateGroup.rows.length + " shifts) — Hours: " +
-          formatHoursDisplay(totals.hoursWorked) + "  OT: " + totals.otHours;
+          formatHoursDisplay(totals.hoursWorked) + "  OT: " + formatOTDisplay(totals.otHours);
 
-        dateBlock.appendChild(totalDiv);
+        rowsScroll.appendChild(totalDiv);
 
       }
+
+      dateBlock.appendChild(rowsScroll);
 
       empBlock.appendChild(dateBlock);
 
@@ -3973,13 +4023,74 @@ function renderOwnerAttendance(){
 }
 
 
-/* Builds one shift's card -- same view/edit/Accept/Edit behaviour as
-   the old table row, just laid out for the new mobile-friendly card
-   list instead of table cells. shiftNumber is null when the date has
-   only one record ("Attendance"), or 1/2/3... when there are multiple
-   shifts that date (each stays its own separate card, never merged). */
+/* Names permanently excluded from the View Employee Attendance
+   display (Owner side only) -- a display-level filter, never a
+   delete/modify of the underlying Attendance rows. Matched exactly,
+   case-insensitively, after trimming, so it never accidentally
+   catches a differently-spelled name like "selvakumar". */
 
-function buildOwnerShiftCard(row,shiftNumber){
+const EXCLUDED_ATTENDANCE_NAMES = ["SELVAKUMAR(CREATOR)"];
+
+function isExcludedAttendanceName(name){
+
+  return EXCLUDED_ATTENDANCE_NAMES.indexOf(String(name || "").trim().toUpperCase()) !== -1;
+
+}
+
+
+/* Short weekday label ("Mon", "Tue", ...) for a "yyyy-MM-dd" date
+   string, shown next to the date heading. Display-only. */
+
+function formatWeekdayShort(dateStr){
+
+  const days =
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  const parts =
+    String(dateStr || "").split("-");
+
+  if(parts.length !== 3){
+    return "";
+  }
+
+  const d =
+    new Date(parseInt(parts[0],10),parseInt(parts[1],10) - 1,parseInt(parts[2],10));
+
+  if(isNaN(d.getTime())){
+    return "";
+  }
+
+  return days[d.getDay()];
+
+}
+
+
+/* Shows "-" instead of a zero OT value, purely cosmetic (matches the
+   register's clean look where most shifts have no OT) -- the actual
+   stored/calculated OT value is completely unchanged. */
+
+function formatOTDisplay(otHoursValue){
+
+  const value =
+    parseFloat(otHoursValue);
+
+  if(isNaN(value) || value === 0){
+    return "-";
+  }
+
+  return String(otHoursValue);
+
+}
+
+
+/* Builds one shift's aligned row for the calendar-register layout --
+   same view/edit/Accept/Edit behaviour as before, just laid out as a
+   compact grid row instead of a boxed card. shiftNumber is null when
+   the date has only one record (no "Shift N" label shown at all, per
+   the required shift rule), or 1/2/3... when there are multiple
+   shifts that date (each stays its own separate row, never merged). */
+
+function buildOwnerShiftRow(row,shiftNumber){
 
   const isOpenRecord =
     row.status === "Open";
@@ -3996,78 +4107,22 @@ function buildOwnerShiftCard(row,shiftNumber){
         : (editingRecord.name === row.name && editingRecord.date === row.date)
     );
 
-  const card =
+  const rowEl =
     document.createElement("div");
 
-  card.className = "att-shift-card";
+  rowEl.className = "att-shift-row";
 
 
-  const header =
+  const shiftCell =
     document.createElement("div");
 
-  header.className = "att-shift-header";
+  shiftCell.className = "att-shift-label";
 
-  const shiftLabel =
-    document.createElement("span");
+  shiftCell.textContent =
+    shiftNumber ? ("Shift " + shiftNumber) : "";
 
-  shiftLabel.textContent =
-    shiftNumber ? ("Shift " + shiftNumber) : "Attendance";
+  rowEl.appendChild(shiftCell);
 
-  header.appendChild(shiftLabel);
-
-  const statusSpan =
-    document.createElement("span");
-
-  if(isEditing){
-    statusSpan.innerHTML = '<span class="status editing">Editing</span>';
-  }else{
-    statusSpan.innerHTML = statusBadge(row.status);
-  }
-
-  header.appendChild(statusSpan);
-
-  card.appendChild(header);
-
-
-  const fields =
-    document.createElement("div");
-
-  fields.className = "att-shift-fields";
-
-  function addField(labelText,valueOrNode){
-
-    const field =
-      document.createElement("div");
-
-    field.className = "att-shift-field";
-
-    const label =
-      document.createElement("div");
-
-    label.className = "att-shift-field-label";
-    label.textContent = labelText;
-
-    field.appendChild(label);
-
-    if(typeof valueOrNode === "string"){
-
-      const value =
-        document.createElement("div");
-
-      value.className = "att-shift-field-value";
-      value.textContent = valueOrNode;
-
-      field.appendChild(value);
-
-    }else{
-
-      field.appendChild(valueOrNode);
-
-    }
-
-    fields.appendChild(field);
-
-  }
 
   if(isEditing){
 
@@ -4076,32 +4131,53 @@ function buildOwnerShiftCard(row,shiftNumber){
        original date. <input type="time"> needs the raw 24hr value,
        never the 12hr AM/PM display text -- see normalizeTime24(). */
 
+    const inCell =
+      document.createElement("div");
+
     const inInput =
       document.createElement("input");
 
     inInput.type = "time";
     inInput.id = "editInTimeInput";
-    inInput.className = "cell-input";
     inInput.value = normalizeTime24(row.inTime);
 
-    addField("In Time",inInput);
+    inCell.appendChild(inInput);
 
+    rowEl.appendChild(inCell);
+
+
+    const outCell =
+      document.createElement("div");
 
     const outInput =
       document.createElement("input");
 
     outInput.type = "time";
     outInput.id = "editOutTimeInput";
-    outInput.className = "cell-input";
     outInput.value = normalizeTime24(row.outTime);
 
-    addField("Out Time",outInput);
+    outCell.appendChild(outInput);
+
+    rowEl.appendChild(outCell);
 
   }else{
 
-    addField("In Time",formatTimeDisplay(row.inTime) || "-");
+    const inCell =
+      document.createElement("div");
 
-    addField("Out Time",formatTimeDisplay(row.outTime) || "-");
+    inCell.className = "att-col-value";
+    inCell.textContent = formatTimeDisplay(row.inTime) || "-";
+
+    rowEl.appendChild(inCell);
+
+
+    const outCell =
+      document.createElement("div");
+
+    outCell.className = "att-col-value";
+    outCell.textContent = formatTimeDisplay(row.outTime) || "-";
+
+    rowEl.appendChild(outCell);
 
   }
 
@@ -4109,17 +4185,40 @@ function buildOwnerShiftCard(row,shiftNumber){
      state -- same as before (they only change once "Save" recomputes
      and reloads them). */
 
-  addField("Hours Worked",formatHoursDisplay(row.hoursWorked) || "-");
-
-  addField("OT Hours",row.otHours || "-");
-
-  card.appendChild(fields);
-
-
-  const actions =
+  const hoursCell =
     document.createElement("div");
 
-  actions.className = "att-shift-actions";
+  hoursCell.className = "att-col-value";
+  hoursCell.textContent = formatHoursDisplay(row.hoursWorked) || "-";
+
+  rowEl.appendChild(hoursCell);
+
+
+  const otCell =
+    document.createElement("div");
+
+  otCell.className = "att-col-muted";
+  otCell.textContent = formatOTDisplay(row.otHours);
+
+  rowEl.appendChild(otCell);
+
+
+  const statusCell =
+    document.createElement("div");
+
+  if(isEditing){
+    statusCell.innerHTML = '<span class="status editing">Editing</span>';
+  }else{
+    statusCell.innerHTML = statusBadge(row.status);
+  }
+
+  rowEl.appendChild(statusCell);
+
+
+  const actionsCell =
+    document.createElement("div");
+
+  actionsCell.className = "att-row-actions";
 
   if(isEditing){
 
@@ -4157,16 +4256,15 @@ function buildOwnerShiftCard(row,shiftNumber){
       };
 
 
-    actions.appendChild(saveBtn);
-    actions.appendChild(cancelBtn);
-
-    card.appendChild(actions);
+    actionsCell.appendChild(saveBtn);
+    actionsCell.appendChild(cancelBtn);
 
   }else if(!isViewOnlyRecord){
 
     /* Employee currently checked in (Open, hasn't tapped Submit
        Attendance yet) or an approved Week Off (WO) -- either way,
-       nothing to approve, so no action buttons for those. */
+       nothing to approve, so no action buttons for those (actionsCell
+       stays empty). */
 
     const acceptBtn =
       document.createElement("button");
@@ -4211,14 +4309,14 @@ function buildOwnerShiftCard(row,shiftNumber){
       };
 
 
-    actions.appendChild(acceptBtn);
-    actions.appendChild(editBtn);
-
-    card.appendChild(actions);
+    actionsCell.appendChild(acceptBtn);
+    actionsCell.appendChild(editBtn);
 
   }
 
-  return card;
+  rowEl.appendChild(actionsCell);
+
+  return rowEl;
 
 }
 
@@ -5363,7 +5461,10 @@ function renderOwnerAttendanceSummary(){
     document.getElementById("ownerSummaryOTHours");
 
   const monthRecords =
-    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth);
+    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
+      .filter(function(row){
+        return !isExcludedAttendanceName(row.name);
+      });
 
   /* Company-wide total, computed per employee first (using the exact
      same unchanged computeTotalWorkingDays()/computeTotalOTHours()

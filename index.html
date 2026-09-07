@@ -404,6 +404,78 @@ th{
   border-radius:14px;
 }
 
+/* ================= CALENDAR VIEW (Owner) =================
+ * A separate, simpler read-only presentation of the exact same
+ * attendance data as View Employee Attendance -- plain table style,
+ * its own independent Select Month state (does not affect or read
+ * from View Employee Attendance's month/table in any way).
+ */
+
+.cal-view-nav{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  margin:14px 0;
+  flex-wrap:wrap;
+}
+
+.cal-view-pill-btn{
+  background:#f0f2f5;
+  border:none;
+  border-radius:999px;
+  padding:8px 18px;
+  font-size:13px;
+  font-weight:bold;
+  color:#1e293b;
+  cursor:pointer;
+}
+
+.cal-view-pill-btn:hover{
+  background:#0d9488;
+  color:white;
+}
+
+.cal-view-month-label{
+  font-weight:bold;
+  font-size:15px;
+  color:#1e293b;
+  min-width:150px;
+  text-align:center;
+}
+
+.cal-view-table-wrap{
+  overflow-x:auto;
+  border:1px solid #e3e7ed;
+  border-radius:12px;
+  -webkit-overflow-scrolling:touch;
+}
+
+.cal-view-table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+.cal-view-table thead th{
+  background:#f3f5f8;
+  color:#1e293b;
+  font-weight:bold;
+  text-align:left;
+  padding:10px 14px;
+  font-size:13px;
+  white-space:nowrap;
+}
+
+.cal-view-table tbody td{
+  padding:10px 14px;
+  font-size:13px;
+  color:#1e293b;
+  border-top:1px solid #eef0f4;
+  white-space:nowrap;
+  background:white;
+}
+
 .badge{
   display:inline-flex;
   align-items:center;
@@ -1287,6 +1359,11 @@ th{
         <div class="tile-title">Employee Management</div>
       </button>
 
+      <button type="button" class="tile" onclick="openOwnerSection(5)">
+        <div class="tile-icon">📆</div>
+        <div class="tile-title">Calendar View</div>
+      </button>
+
     </div>
 
   </div>
@@ -1503,6 +1580,59 @@ th{
         </thead>
 
         <tbody id="employeeSettingsTable"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+
+  <!-- SECTION 5: CALENDAR VIEW -->
+  <div id="ownerSection5" class="card hidden">
+
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
+
+    <h2>Calendar View</h2>
+
+    <p style="font-size:13px;color:#596273;">
+      Same attendance data as View Employee Attendance, shown in a
+      simple calendar-style table.
+    </p>
+
+    <label>Select Month</label>
+
+    <input type="month" id="ownerCalSelectMonth" onchange="onCalendarViewMonthChange()">
+
+    <div class="cal-view-nav">
+
+      <button type="button" class="cal-view-pill-btn" onclick="changeCalendarViewMonth(-1)">‹ Previous</button>
+
+      <span class="cal-view-month-label" id="ownerCalMonthLabel">September 2026</span>
+
+      <button type="button" class="cal-view-pill-btn" onclick="changeCalendarViewMonth(1)">Next ›</button>
+
+    </div>
+
+    <div class="cal-view-table-wrap">
+
+      <table class="cal-view-table">
+
+        <thead>
+
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="ownerCalTable"></tbody>
 
       </table>
 
@@ -2828,7 +2958,7 @@ function showOwnerCategoryGrid(){
     grid.classList.remove("hidden");
   }
 
-  for(let i = 1; i <= 4; i++){
+  for(let i = 1; i <= 5; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -2851,7 +2981,7 @@ function openOwnerSection(sectionNumber){
     grid.classList.add("hidden");
   }
 
-  for(let i = 1; i <= 4; i++){
+  for(let i = 1; i <= 5; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -2867,6 +2997,14 @@ function openOwnerSection(sectionNumber){
     markCurrentMonthPendingAsRead();
 
     renderOwnerAttendance();
+
+  }
+
+  if(sectionNumber === 5){
+
+    syncCalendarViewMonthInput();
+
+    renderOwnerCalendarView();
 
   }
 
@@ -5450,6 +5588,154 @@ function syncOwnerSelectMonthInput(){
     input.value =
       ownerSummaryYear + "-" + String(ownerSummaryMonth + 1).padStart(2,"0");
   }
+
+}
+
+
+/* ================= CALENDAR VIEW (Owner) =================
+ * A separate, additional tile showing the exact same attendance data
+ * as View Employee Attendance (same allData.attendance, same month
+ * filtering, same excluded-name rule), just in a simpler plain-table
+ * layout instead of the grouped register. Entirely self-contained --
+ * its own month/year state (independent of ownerSummaryYear/Month
+ * used by View Employee Attendance), its own render function. Does
+ * not read from, write to, or otherwise touch View Employee
+ * Attendance's state, table, or summary cards. Read-only (no Edit/
+ * Accept here -- that stays exclusively in View Employee Attendance).
+ */
+
+let calendarViewYear = new Date().getFullYear();
+
+let calendarViewMonth = new Date().getMonth();
+
+function changeCalendarViewMonth(delta){
+
+  calendarViewMonth += delta;
+
+  if(calendarViewMonth < 0){
+    calendarViewMonth = 11;
+    calendarViewYear--;
+  }
+
+  if(calendarViewMonth > 11){
+    calendarViewMonth = 0;
+    calendarViewYear++;
+  }
+
+  renderOwnerCalendarView();
+
+}
+
+
+function onCalendarViewMonthChange(){
+
+  const input =
+    document.getElementById("ownerCalSelectMonth");
+
+  const value =
+    input ? input.value : "";
+
+  if(value){
+
+    const parts =
+      value.split("-");
+
+    const y =
+      parseInt(parts[0],10);
+
+    const m =
+      parseInt(parts[1],10) - 1;
+
+    if(!isNaN(y) && !isNaN(m)){
+      calendarViewYear = y;
+      calendarViewMonth = m;
+    }
+
+  }
+
+  renderOwnerCalendarView();
+
+}
+
+
+function syncCalendarViewMonthInput(){
+
+  const input =
+    document.getElementById("ownerCalSelectMonth");
+
+  if(input){
+    input.value =
+      calendarViewYear + "-" + String(calendarViewMonth + 1).padStart(2,"0");
+  }
+
+}
+
+
+function renderOwnerCalendarView(){
+
+  syncCalendarViewMonthInput();
+
+  const labelEl =
+    document.getElementById("ownerCalMonthLabel");
+
+  if(labelEl){
+    labelEl.textContent =
+      SUMMARY_MONTH_NAMES[calendarViewMonth] + " " + calendarViewYear;
+  }
+
+  const tbody =
+    document.getElementById("ownerCalTable");
+
+  if(!tbody){
+    return;
+  }
+
+  tbody.innerHTML = "";
+
+  const records =
+    filterRecordsByMonth(allData.attendance,calendarViewYear,calendarViewMonth)
+      .filter(function(row){
+        return !isExcludedAttendanceName(row.name);
+      })
+      .sort(function(a,b){
+
+        if(a.date < b.date){ return -1; }
+
+        if(a.date > b.date){ return 1; }
+
+        if(a.name < b.name){ return -1; }
+
+        if(a.name > b.name){ return 1; }
+
+        return 0;
+
+      });
+
+  if(records.length === 0){
+
+    tbody.innerHTML =
+      "<tr><td colspan='5' style='text-align:center;color:#596273;'>No attendance records found for " +
+      SUMMARY_MONTH_NAMES[calendarViewMonth] + " " + calendarViewYear + ".</td></tr>";
+
+    return;
+
+  }
+
+  records.forEach(function(row){
+
+    const tr =
+      document.createElement("tr");
+
+    tr.innerHTML =
+      "<td>" + escapeHtml(row.name) + "</td>" +
+      "<td>" + formatDateDisplay(row.date) + "</td>" +
+      "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
+      "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
+      "<td>" + (formatHoursDisplay(row.hoursWorked) || "-") + "</td>";
+
+    tbody.appendChild(tr);
+
+  });
 
 }
 

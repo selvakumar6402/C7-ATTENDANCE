@@ -404,78 +404,6 @@ th{
   border-radius:14px;
 }
 
-/* ================= CALENDAR VIEW (Owner) =================
- * A separate, simpler read-only presentation of the exact same
- * attendance data as View Employee Attendance -- plain table style,
- * its own independent Select Month state (does not affect or read
- * from View Employee Attendance's month/table in any way).
- */
-
-.cal-view-nav{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:14px;
-  margin:14px 0;
-  flex-wrap:wrap;
-}
-
-.cal-view-pill-btn{
-  background:#f0f2f5;
-  border:none;
-  border-radius:999px;
-  padding:8px 18px;
-  font-size:13px;
-  font-weight:bold;
-  color:#1e293b;
-  cursor:pointer;
-}
-
-.cal-view-pill-btn:hover{
-  background:#0d9488;
-  color:white;
-}
-
-.cal-view-month-label{
-  font-weight:bold;
-  font-size:15px;
-  color:#1e293b;
-  min-width:150px;
-  text-align:center;
-}
-
-.cal-view-table-wrap{
-  overflow-x:auto;
-  border:1px solid #e3e7ed;
-  border-radius:12px;
-  -webkit-overflow-scrolling:touch;
-}
-
-.cal-view-table{
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-}
-
-.cal-view-table thead th{
-  background:#f3f5f8;
-  color:#1e293b;
-  font-weight:bold;
-  text-align:left;
-  padding:10px 14px;
-  font-size:13px;
-  white-space:nowrap;
-}
-
-.cal-view-table tbody td{
-  padding:10px 14px;
-  font-size:13px;
-  color:#1e293b;
-  border-top:1px solid #eef0f4;
-  white-space:nowrap;
-  background:white;
-}
-
 .badge{
   display:inline-flex;
   align-items:center;
@@ -1350,18 +1278,13 @@ th{
 
       <button type="button" class="tile" onclick="openOwnerSection(3)">
         <div class="tile-icon">📝</div>
-        <div class="tile-title">Manual Check-In / Check-Out Requests</div>
+        <div class="tile-title">Manual Check-In / Check-Out Request and Off Request</div>
         <span id="manualReqTileBadge" class="badge tile-badge hidden">0</span>
       </button>
 
       <button type="button" class="tile" onclick="openOwnerSection(4)">
         <div class="tile-icon">👥</div>
         <div class="tile-title">Employee Management</div>
-      </button>
-
-      <button type="button" class="tile" onclick="openOwnerSection(5)">
-        <div class="tile-icon">📆</div>
-        <div class="tile-title">Calendar View</div>
       </button>
 
     </div>
@@ -1415,7 +1338,30 @@ th{
 
     </div>
 
-    <div id="ownerTable" class="att-list"></div>
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Hours Worked</th>
+            <th>OT Hours</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="ownerTable"></tbody>
+
+      </table>
+
+    </div>
 
   </div>
 
@@ -1481,7 +1427,7 @@ th{
 
     <div class="row-flex" style="justify-content:flex-start;gap:10px;">
 
-      <h2 style="margin:0;">Manual Check-In / Check-Out Requests</h2>
+      <h2 style="margin:0;">Manual Check-In / Check-Out Request and Off Request</h2>
 
       <span id="manualReqBadge" class="badge hidden">0</span>
 
@@ -1580,59 +1526,6 @@ th{
         </thead>
 
         <tbody id="employeeSettingsTable"></tbody>
-
-      </table>
-
-    </div>
-
-  </div>
-
-
-  <!-- SECTION 5: CALENDAR VIEW -->
-  <div id="ownerSection5" class="card hidden">
-
-    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
-      ← Back
-    </button>
-
-    <h2>Calendar View</h2>
-
-    <p style="font-size:13px;color:#596273;">
-      Same attendance data as View Employee Attendance, shown in a
-      simple calendar-style table.
-    </p>
-
-    <label>Select Month</label>
-
-    <input type="month" id="ownerCalSelectMonth" onchange="onCalendarViewMonthChange()">
-
-    <div class="cal-view-nav">
-
-      <button type="button" class="cal-view-pill-btn" onclick="changeCalendarViewMonth(-1)">‹ Previous</button>
-
-      <span class="cal-view-month-label" id="ownerCalMonthLabel">September 2026</span>
-
-      <button type="button" class="cal-view-pill-btn" onclick="changeCalendarViewMonth(1)">Next ›</button>
-
-    </div>
-
-    <div class="cal-view-table-wrap">
-
-      <table class="cal-view-table">
-
-        <thead>
-
-          <tr>
-            <th>Employee</th>
-            <th>Date</th>
-            <th>In Time</th>
-            <th>Out Time</th>
-            <th>Hours Worked</th>
-          </tr>
-
-        </thead>
-
-        <tbody id="ownerCalTable"></tbody>
 
       </table>
 
@@ -2958,7 +2851,7 @@ function showOwnerCategoryGrid(){
     grid.classList.remove("hidden");
   }
 
-  for(let i = 1; i <= 5; i++){
+  for(let i = 1; i <= 4; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -2981,7 +2874,7 @@ function openOwnerSection(sectionNumber){
     grid.classList.add("hidden");
   }
 
-  for(let i = 1; i <= 5; i++){
+  for(let i = 1; i <= 4; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -2997,14 +2890,6 @@ function openOwnerSection(sectionNumber){
     markCurrentMonthPendingAsRead();
 
     renderOwnerAttendance();
-
-  }
-
-  if(sectionNumber === 5){
-
-    syncCalendarViewMonthInput();
-
-    renderOwnerCalendarView();
 
   }
 
@@ -3976,10 +3861,10 @@ function formatDateDisplay(dateStr){
 
 function renderOwnerAttendance(){
 
-  const container =
+  const tbody =
     document.getElementById("ownerTable");
 
-  container.innerHTML = "";
+  tbody.innerHTML = "";
 
   /* No "Select Employee" gate -- View Employee Attendance shows every
      employee's attendance for the selected month directly, driven by
@@ -3988,16 +3873,21 @@ function renderOwnerAttendance(){
      share). Accept/Edit still work exactly as before -- each button
      still acts on that specific row's own name/date/rowId.
 
+     Reuses the exact same plain-table design as the Employee's own
+     "Attendance Download & View" table (renderEmployeeAttendance()),
+     with an Employee column (since this table spans everyone) and an
+     Action column (since Accept/Edit is Owner-only) added.
+
      EXCLUDED_ATTENDANCE_NAMES filters out a specific unwanted name
      from DISPLAY only (e.g. "SELVAKUMAR(CREATOR)") -- the underlying
      Attendance sheet rows are never touched, deleted, or modified by
      this; a differently-named record like "selvakumar" is completely
      unaffected and still shows normally.
 
-     Sorted by employee name first, then date, so each employee's
-     records form one contiguous block with their dates in
-     chronological order underneath -- this is what
-     groupRecordsByEmployeeThenDate() below relies on. */
+     Sorted by DATE DESCENDING first (newest date at the top), then by
+     employee name, then by rowId (creation order) so that an
+     employee's multiple shifts on the same date stay in a sensible
+     order for the "Daily Total" grouping below. */
 
   const records =
     filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
@@ -4006,13 +3896,17 @@ function renderOwnerAttendance(){
       })
       .sort(function(a,b){
 
+        if(a.date < b.date){ return 1; }
+
+        if(a.date > b.date){ return -1; }
+
         if(a.name < b.name){ return -1; }
 
         if(a.name > b.name){ return 1; }
 
-        if(a.date < b.date){ return -1; }
+        if(a.rowId < b.rowId){ return -1; }
 
-        if(a.date > b.date){ return 1; }
+        if(a.rowId > b.rowId){ return 1; }
 
         return 0;
 
@@ -4022,231 +3916,91 @@ function renderOwnerAttendance(){
 
   if(records.length === 0){
 
-    const emptyDiv =
-      document.createElement("div");
-
-    emptyDiv.className = "att-empty-message";
-
-    emptyDiv.textContent =
-      "No attendance records found for " +
-      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear + ".";
-
-    container.appendChild(emptyDiv);
+    tbody.innerHTML =
+      "<tr><td colspan='8'>No attendance records found for " +
+      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear + ".</td></tr>";
 
     return;
 
   }
 
-  /* Two-level grouping: by employee, then by calendar date within
-     that employee -- this is what makes a date appear only ONCE per
-     employee, with every shift on that date listed underneath it as
-     aligned sub-rows instead of repeating the date per shift. Purely
-     a display grouping -- every underlying record stays completely
-     separate (its own Check-In, Check-Out, Hours Worked, OT Hours,
-     Edit, Save, Accept/Decline), nothing is merged or duplicated. */
+  /* Grouped by (date + employee) together, NOT date alone -- since
+     this table spans every employee, grouping by date only would
+     incorrectly merge different employees' hours into one "Daily
+     Total" row if they happen to share a date. */
 
-  const employeeGroups =
-    groupRecordsByEmployeeThenDate(records);
+  const groups =
+    groupOwnerRecordsByDateAndEmployee(records);
 
-  employeeGroups.forEach(function(empGroup){
+  groups.forEach(function(group){
 
-    const empBlock =
-      document.createElement("div");
+    group.rows.forEach(function(row){
 
-    empBlock.className = "att-employee-block";
-
-    const empName =
-      document.createElement("div");
-
-    empName.className = "att-employee-name";
-    empName.textContent = empGroup.name;
-
-    empBlock.appendChild(empName);
-
-    const columnsHeading =
-      document.createElement("div");
-
-    columnsHeading.className = "att-columns-heading";
-
-    columnsHeading.innerHTML =
-      "<span>Date</span><span>|</span><span>Day</span><span>|</span>" +
-      "<span>In Time</span><span>|</span><span>Out Time</span><span>|</span>" +
-      "<span>Hours Worked</span><span>|</span><span>OT Hours</span><span>|</span>" +
-      "<span>Status</span>";
-
-    empBlock.appendChild(columnsHeading);
-
-    empGroup.dateGroups.forEach(function(dateGroup){
-
-      const dateBlock =
-        document.createElement("div");
-
-      dateBlock.className = "att-date-block";
-
-      const dateHeading =
-        document.createElement("div");
-
-      dateHeading.className = "att-date-heading";
-
-      dateHeading.innerHTML =
-        "📅 " + formatDateDisplay(dateGroup.date) +
-        ' <span class="att-weekday">(' + formatWeekdayShort(dateGroup.date) + ')</span>';
-
-      dateBlock.appendChild(dateHeading);
-
-      const rowsScroll =
-        document.createElement("div");
-
-      rowsScroll.className = "att-rows-scroll";
-
-      /* Shifts are numbered automatically from their order on that
-         date (1st record = Shift 1, 2nd = Shift 2, etc.) ONLY when
-         there's more than one -- a single record on a date shows no
-         shift label at all, just the attendance details, per the
-         required shift rule.
-
-         For a multi-shift date: every shift keeps its own In Time /
-         Out Time / Status / Accept / Edit exactly as its own separate
-         record (never merged in the data). Only the DISPLAYED Hours
-         Worked / OT Hours differ: earlier shifts show blank OT (OT is
-         a whole-day concept, never calculated per shift), and the
-         LAST shift's row shows the day's CUMULATIVE Hours Worked and
-         OT Hours (computed the same way as before, via the unchanged
-         computeGroupTotals()) instead of its own individual duration
-         -- this is what replaces the old separate "Daily Total" row. */
-
-      const isMultiShift =
-        dateGroup.rows.length >= 2;
-
-      dateGroup.rows.forEach(function(row,idx){
-
-        const isLastShift =
-          idx === dateGroup.rows.length - 1;
-
-        let displayHours = row.hoursWorked;
-
-        let displayOT = row.otHours;
-
-        if(isMultiShift){
-
-          if(isLastShift){
-
-            const totals =
-              computeGroupTotals(dateGroup.rows);
-
-            displayHours = totals.hoursWorked;
-
-            displayOT = totals.otHours;
-
-          }else{
-
-            displayOT = "";
-
-          }
-
-        }
-
-        rowsScroll.appendChild(
-          buildOwnerShiftRow(row,isMultiShift ? (idx + 1) : null,displayHours,displayOT)
-        );
-
-      });
-
-      dateBlock.appendChild(rowsScroll);
-
-      empBlock.appendChild(dateBlock);
+      tbody.appendChild(buildOwnerAttendanceRow(row));
 
     });
 
-    container.appendChild(empBlock);
+    /* Multiple shifts for the SAME employee on the SAME date: each
+       stays its own row above (never merged/overwritten) -- this just
+       adds one extra read-only summary row with that date's combined
+       Hours Worked and OT Hours, whenever there's more than one shift
+       to add up -- exactly matching the Employee's own table. */
+
+    if(group.rows.length >= 2){
+
+      const totals =
+        computeGroupTotals(group.rows);
+
+      const totalRow =
+        document.createElement("tr");
+
+      totalRow.style.fontWeight = "bold";
+      totalRow.style.background = "#f7f8fa";
+
+      totalRow.innerHTML =
+        "<td colspan='4' style='text-align:right;'>" + escapeHtml(group.name) +
+        " — Daily Total (" + group.rows.length + " shifts)</td>" +
+        "<td>" + formatHoursDisplay(totals.hoursWorked) + "</td>" +
+        "<td>" + totals.otHours + "</td>" +
+        "<td></td><td></td>";
+
+      tbody.appendChild(totalRow);
+
+    }
 
   });
 
 }
 
 
-/* Names permanently excluded from the View Employee Attendance
-   display (Owner side only) -- a display-level filter, never a
-   delete/modify of the underlying Attendance rows. Matched exactly,
-   case-insensitively, after trimming, so it never accidentally
-   catches a differently-spelled name like "selvakumar". */
+/* Statuses the app itself ever assigns through Check-In/Check-Out,
+   Submit Attendance, Manual Requests, or Accept/Edit. Any OTHER
+   status value can only be a custom Off Request reason (e.g. "For
+   Exam") saved verbatim as the Attendance status -- those rows are
+   finalized/self-explanatory, so they're treated as view-only (no
+   Accept/Edit), the same way an approved "WO" row already is. */
 
-const EXCLUDED_ATTENDANCE_NAMES = ["SELVAKUMAR(CREATOR)"];
+const KNOWN_ATTENDANCE_STATUSES = ["Open","Pending","Approved","Declined","WO"];
 
-function isExcludedAttendanceName(name){
+function isCustomOffReasonStatus(status){
 
-  return EXCLUDED_ATTENDANCE_NAMES.indexOf(String(name || "").trim().toUpperCase()) !== -1;
-
-}
-
-
-/* Short weekday label ("Mon", "Tue", ...) for a "yyyy-MM-dd" date
-   string, shown next to the date heading. Display-only. */
-
-function formatWeekdayShort(dateStr){
-
-  const days =
-    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
-  const parts =
-    String(dateStr || "").split("-");
-
-  if(parts.length !== 3){
-    return "";
-  }
-
-  const d =
-    new Date(parseInt(parts[0],10),parseInt(parts[1],10) - 1,parseInt(parts[2],10));
-
-  if(isNaN(d.getTime())){
-    return "";
-  }
-
-  return days[d.getDay()];
+  return KNOWN_ATTENDANCE_STATUSES.indexOf(status) === -1;
 
 }
 
 
-/* Shows "-" instead of a zero OT value, purely cosmetic (matches the
-   register's clean look where most shifts have no OT) -- the actual
-   stored/calculated OT value is completely unchanged. */
+/* Builds one attendance row for the Owner's plain table -- same
+   view/edit/Accept/Edit behaviour as before, just as a normal <tr>
+   with an Employee column and an Action column added, matching the
+   Employee's own table design exactly for the other columns. */
 
-function formatOTDisplay(otHoursValue){
-
-  const value =
-    parseFloat(otHoursValue);
-
-  if(isNaN(value) || value === 0){
-    return "-";
-  }
-
-  return String(otHoursValue);
-
-}
-
-
-/* Builds one shift's aligned row for the calendar-register layout --
-   same view/edit/Accept/Edit behaviour as before, just laid out as a
-   compact grid row instead of a boxed card. shiftNumber is null when
-   the date has only one record (no "Shift N" label shown at all, per
-   the required shift rule), or 1/2/3... when there are multiple
-   shifts that date (each stays its own separate row, never merged). */
-
-function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
-
-  if(displayHours === undefined){
-    displayHours = row.hoursWorked;
-  }
-
-  if(displayOT === undefined){
-    displayOT = row.otHours;
-  }
+function buildOwnerAttendanceRow(row){
 
   const isOpenRecord =
     row.status === "Open";
 
   const isViewOnlyRecord =
-    isOpenRecord || row.status === "WO";
+    isOpenRecord || row.status === "WO" || isCustomOffReasonStatus(row.status);
 
   const isEditing =
     !isViewOnlyRecord &&
@@ -4257,22 +4011,30 @@ function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
         : (editingRecord.name === row.name && editingRecord.date === row.date)
     );
 
-  const rowEl =
-    document.createElement("div");
+  const tr =
+    document.createElement("tr");
 
-  rowEl.className = "att-shift-row";
+  const nameCell =
+    document.createElement("td");
+
+  nameCell.textContent = row.name;
+
+  tr.appendChild(nameCell);
 
 
-  const shiftCell =
-    document.createElement("div");
+  const dateCell =
+    document.createElement("td");
 
-  shiftCell.className = "att-shift-label";
+  dateCell.textContent = formatDateDisplay(row.date);
 
-  shiftCell.textContent =
-    shiftNumber ? ("Shift " + shiftNumber) : "";
+  tr.appendChild(dateCell);
 
-  rowEl.appendChild(shiftCell);
 
+  const inCell =
+    document.createElement("td");
+
+  const outCell =
+    document.createElement("td");
 
   if(isEditing){
 
@@ -4281,80 +4043,57 @@ function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
        original date. <input type="time"> needs the raw 24hr value,
        never the 12hr AM/PM display text -- see normalizeTime24(). */
 
-    const inCell =
-      document.createElement("div");
-
     const inInput =
       document.createElement("input");
 
     inInput.type = "time";
     inInput.id = "editInTimeInput";
+    inInput.className = "cell-input";
     inInput.value = normalizeTime24(row.inTime);
 
     inCell.appendChild(inInput);
 
-    rowEl.appendChild(inCell);
-
-
-    const outCell =
-      document.createElement("div");
 
     const outInput =
       document.createElement("input");
 
     outInput.type = "time";
     outInput.id = "editOutTimeInput";
+    outInput.className = "cell-input";
     outInput.value = normalizeTime24(row.outTime);
 
     outCell.appendChild(outInput);
 
-    rowEl.appendChild(outCell);
-
   }else{
 
-    const inCell =
-      document.createElement("div");
-
-    inCell.className = "att-col-value";
     inCell.textContent = formatTimeDisplay(row.inTime) || "-";
 
-    rowEl.appendChild(inCell);
-
-
-    const outCell =
-      document.createElement("div");
-
-    outCell.className = "att-col-value";
     outCell.textContent = formatTimeDisplay(row.outTime) || "-";
-
-    rowEl.appendChild(outCell);
 
   }
 
-  /* Hours Worked / OT Hours are always shown regardless of editing
-     state -- same as before (they only change once "Save" recomputes
-     and reloads them). */
+  tr.appendChild(inCell);
+  tr.appendChild(outCell);
+
 
   const hoursCell =
-    document.createElement("div");
+    document.createElement("td");
 
-  hoursCell.className = "att-col-value";
-  hoursCell.textContent = formatHoursDisplay(displayHours) || "-";
+  hoursCell.textContent = formatHoursDisplay(row.hoursWorked) || "-";
 
-  rowEl.appendChild(hoursCell);
+  tr.appendChild(hoursCell);
 
 
   const otCell =
-    document.createElement("div");
+    document.createElement("td");
 
-  otCell.className = "att-col-muted";
-  otCell.textContent = formatOTDisplay(displayOT);
+  otCell.textContent = row.otHours || "-";
 
-  rowEl.appendChild(otCell);
+  tr.appendChild(otCell);
 
 
   const statusCell =
-    document.createElement("div");
+    document.createElement("td");
 
   if(isEditing){
     statusCell.innerHTML = '<span class="status editing">Editing</span>';
@@ -4362,13 +4101,13 @@ function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
     statusCell.innerHTML = statusBadge(row.status);
   }
 
-  rowEl.appendChild(statusCell);
+  tr.appendChild(statusCell);
 
 
-  const actionsCell =
-    document.createElement("div");
+  const actionCell =
+    document.createElement("td");
 
-  actionsCell.className = "att-row-actions";
+  actionCell.className = "actions";
 
   if(isEditing){
 
@@ -4406,15 +4145,18 @@ function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
       };
 
 
-    actionsCell.appendChild(saveBtn);
-    actionsCell.appendChild(cancelBtn);
+    actionCell.appendChild(saveBtn);
+    actionCell.appendChild(cancelBtn);
 
-  }else if(!isViewOnlyRecord){
+  }else if(isViewOnlyRecord){
 
     /* Employee currently checked in (Open, hasn't tapped Submit
-       Attendance yet) or an approved Week Off (WO) -- either way,
-       nothing to approve, so no action buttons for those (actionsCell
-       stays empty). */
+       Attendance yet), an approved Week Off (WO), or a saved custom
+       Off Request reason -- either way, nothing to approve. */
+
+    actionCell.textContent = "-";
+
+  }else{
 
     const acceptBtn =
       document.createElement("button");
@@ -4459,59 +4201,63 @@ function buildOwnerShiftRow(row,shiftNumber,displayHours,displayOT){
       };
 
 
-    actionsCell.appendChild(acceptBtn);
-    actionsCell.appendChild(editBtn);
+    actionCell.appendChild(acceptBtn);
+    actionCell.appendChild(editBtn);
 
   }
 
-  rowEl.appendChild(actionsCell);
+  tr.appendChild(actionCell);
 
-  return rowEl;
+  return tr;
 
 }
 
 
-/* Groups an already-sorted (by name, then date) records array into
-   employee blocks, each containing that employee's dates in order,
-   each date containing its own shift rows. This is what makes a
-   calendar date appear only ONCE per employee -- multiple shifts on
-   that date become separate cards WITHIN that one date group, never
-   a repeated date. Purely a display grouping: it does not merge,
-   duplicate, or alter any underlying record. */
+/* Names permanently excluded from the View Employee Attendance
+   display (Owner side only) -- a display-level filter, never a
+   delete/modify of the underlying Attendance rows. Matched exactly,
+   case-insensitively, after trimming, so it never accidentally
+   catches a differently-spelled name like "selvakumar". */
 
-function groupRecordsByEmployeeThenDate(records){
+const EXCLUDED_ATTENDANCE_NAMES = ["SELVAKUMAR(CREATOR)"];
 
-  const employeeGroups = [];
+function isExcludedAttendanceName(name){
+
+  return EXCLUDED_ATTENDANCE_NAMES.indexOf(String(name || "").trim().toUpperCase()) !== -1;
+
+}
+
+
+/* Groups an already-sorted records array into consecutive runs that
+   share BOTH the same calendar date AND the same employee -- used
+   only by the Owner's all-employees table above, so that two
+   different employees who happen to share a date are never merged
+   into the same "Daily Total" row. (groupRecordsByDate() elsewhere is
+   unchanged and still used where records are already scoped to a
+   single employee, e.g. the Employee's own table.) */
+
+function groupOwnerRecordsByDateAndEmployee(records){
+
+  const groups = [];
 
   records.forEach(function(row){
 
-    let empGroup =
-      employeeGroups[employeeGroups.length - 1];
+    const lastGroup =
+      groups[groups.length - 1];
 
-    if(!empGroup || empGroup.name !== row.name){
+    if(lastGroup && lastGroup.date === row.date && lastGroup.name === row.name){
 
-      empGroup = { name: row.name, dateGroups: [] };
+      lastGroup.rows.push(row);
 
-      employeeGroups.push(empGroup);
+    }else{
 
-    }
-
-    let dateGroup =
-      empGroup.dateGroups[empGroup.dateGroups.length - 1];
-
-    if(!dateGroup || dateGroup.date !== row.date){
-
-      dateGroup = { date: row.date, rows: [] };
-
-      empGroup.dateGroups.push(dateGroup);
+      groups.push({ date: row.date, name: row.name, rows: [row] });
 
     }
-
-    dateGroup.rows.push(row);
 
   });
 
-  return employeeGroups;
+  return groups;
 
 }
 
@@ -5588,154 +5334,6 @@ function syncOwnerSelectMonthInput(){
     input.value =
       ownerSummaryYear + "-" + String(ownerSummaryMonth + 1).padStart(2,"0");
   }
-
-}
-
-
-/* ================= CALENDAR VIEW (Owner) =================
- * A separate, additional tile showing the exact same attendance data
- * as View Employee Attendance (same allData.attendance, same month
- * filtering, same excluded-name rule), just in a simpler plain-table
- * layout instead of the grouped register. Entirely self-contained --
- * its own month/year state (independent of ownerSummaryYear/Month
- * used by View Employee Attendance), its own render function. Does
- * not read from, write to, or otherwise touch View Employee
- * Attendance's state, table, or summary cards. Read-only (no Edit/
- * Accept here -- that stays exclusively in View Employee Attendance).
- */
-
-let calendarViewYear = new Date().getFullYear();
-
-let calendarViewMonth = new Date().getMonth();
-
-function changeCalendarViewMonth(delta){
-
-  calendarViewMonth += delta;
-
-  if(calendarViewMonth < 0){
-    calendarViewMonth = 11;
-    calendarViewYear--;
-  }
-
-  if(calendarViewMonth > 11){
-    calendarViewMonth = 0;
-    calendarViewYear++;
-  }
-
-  renderOwnerCalendarView();
-
-}
-
-
-function onCalendarViewMonthChange(){
-
-  const input =
-    document.getElementById("ownerCalSelectMonth");
-
-  const value =
-    input ? input.value : "";
-
-  if(value){
-
-    const parts =
-      value.split("-");
-
-    const y =
-      parseInt(parts[0],10);
-
-    const m =
-      parseInt(parts[1],10) - 1;
-
-    if(!isNaN(y) && !isNaN(m)){
-      calendarViewYear = y;
-      calendarViewMonth = m;
-    }
-
-  }
-
-  renderOwnerCalendarView();
-
-}
-
-
-function syncCalendarViewMonthInput(){
-
-  const input =
-    document.getElementById("ownerCalSelectMonth");
-
-  if(input){
-    input.value =
-      calendarViewYear + "-" + String(calendarViewMonth + 1).padStart(2,"0");
-  }
-
-}
-
-
-function renderOwnerCalendarView(){
-
-  syncCalendarViewMonthInput();
-
-  const labelEl =
-    document.getElementById("ownerCalMonthLabel");
-
-  if(labelEl){
-    labelEl.textContent =
-      SUMMARY_MONTH_NAMES[calendarViewMonth] + " " + calendarViewYear;
-  }
-
-  const tbody =
-    document.getElementById("ownerCalTable");
-
-  if(!tbody){
-    return;
-  }
-
-  tbody.innerHTML = "";
-
-  const records =
-    filterRecordsByMonth(allData.attendance,calendarViewYear,calendarViewMonth)
-      .filter(function(row){
-        return !isExcludedAttendanceName(row.name);
-      })
-      .sort(function(a,b){
-
-        if(a.date < b.date){ return -1; }
-
-        if(a.date > b.date){ return 1; }
-
-        if(a.name < b.name){ return -1; }
-
-        if(a.name > b.name){ return 1; }
-
-        return 0;
-
-      });
-
-  if(records.length === 0){
-
-    tbody.innerHTML =
-      "<tr><td colspan='5' style='text-align:center;color:#596273;'>No attendance records found for " +
-      SUMMARY_MONTH_NAMES[calendarViewMonth] + " " + calendarViewYear + ".</td></tr>";
-
-    return;
-
-  }
-
-  records.forEach(function(row){
-
-    const tr =
-      document.createElement("tr");
-
-    tr.innerHTML =
-      "<td>" + escapeHtml(row.name) + "</td>" +
-      "<td>" + formatDateDisplay(row.date) + "</td>" +
-      "<td>" + (formatTimeDisplay(row.inTime) || "-") + "</td>" +
-      "<td>" + (formatTimeDisplay(row.outTime) || "-") + "</td>" +
-      "<td>" + (formatHoursDisplay(row.hoursWorked) || "-") + "</td>";
-
-    tbody.appendChild(tr);
-
-  });
 
 }
 
@@ -7326,6 +6924,18 @@ function statusBadge(status){
   if(s === "wo"){
     cls = "wo";
     label = "WO (Week Off)";
+  }
+
+  if(
+    s !== "pending" && s !== "approved" && s !== "declined" &&
+    s !== "open" && s !== "wo" && status
+  ){
+    /* Any other status value can only be a custom Off Request reason
+       (e.g. "For Exam") saved verbatim as the Attendance status --
+       shown with the same finalized look as WO, and the exact text
+       the employee entered, never replaced with a generic label. */
+    cls = "wo";
+    label = status;
   }
 
   return (

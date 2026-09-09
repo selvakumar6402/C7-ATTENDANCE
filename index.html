@@ -3108,7 +3108,7 @@ async function checkIn(){
       return (
         row.name.toLowerCase() === currentEmployee.toLowerCase() &&
         row.date === date &&
-        row.status === "WO"
+        row.status === "Week Off"
       );
 
     });
@@ -3980,7 +3980,7 @@ function renderOwnerAttendance(){
    finalized/self-explanatory, so they're treated as view-only (no
    Accept/Edit), the same way an approved "WO" row already is. */
 
-const KNOWN_ATTENDANCE_STATUSES = ["Open","Pending","Approved","Declined","WO"];
+const KNOWN_ATTENDANCE_STATUSES = ["Open","Pending","Approved","Declined","Week Off"];
 
 function isCustomOffReasonStatus(status){
 
@@ -4000,7 +4000,7 @@ function buildOwnerAttendanceRow(row){
     row.status === "Open";
 
   const isViewOnlyRecord =
-    isOpenRecord || row.status === "WO" || isCustomOffReasonStatus(row.status);
+    isOpenRecord || row.status === "Week Off" || isCustomOffReasonStatus(row.status);
 
   const isEditing =
     !isViewOnlyRecord &&
@@ -6921,15 +6921,15 @@ function statusBadge(status){
     label = "On Duty";
   }
 
-  if(s === "wo"){
-    cls = "wo";
-    label = "WO (Week Off)";
-  }
+ if(s === "week off"){
+  cls = "wo";
+  label = "Week Off";
+}
 
-  if(
-    s !== "pending" && s !== "approved" && s !== "declined" &&
-    s !== "open" && s !== "wo" && status
-  ){
+if(
+  s !== "pending" && s !== "approved" && s !== "declined" &&
+  s !== "open" && s !== "week off" && status
+){
     /* Any other status value can only be a custom Off Request reason
        (e.g. "For Exam") saved verbatim as the Attendance status --
        shown with the same finalized look as WO, and the exact text

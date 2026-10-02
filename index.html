@@ -7267,55 +7267,15 @@ function titleCaseName(name){
 }
 
 
-async function openUsersSection(){
+function openUsersSection(){
 
-  const pin =
-    prompt("Enter your Owner PIN to open Users:");
+  openOwnerSection(5);
 
-  if(!pin){
-    return;
-  }
+  renderOwnersList(allData.owners || []);
 
-  try{
-
-    const response =
-      await fetch(API_URL,{
-        method:"POST",
-
-        body:JSON.stringify({
-          action:"getOwners",
-          ownerName:currentOwner,
-          ownerPin:pin.trim()
-        })
-      });
-
-    const data =
-      await response.json();
-
-    if(!data.success){
-
-      alert(data.message || "Could not open Users.");
-
-      return;
-
-    }
-
-    usersAuthPin = pin.trim();
-
-    openOwnerSection(5);
-
-    renderOwnersList(data.owners || []);
-
-    document.getElementById("addOwnerMessage").innerHTML = "";
-
-  }catch(error){
-
-    alert("Could not open Users. Please check your connection.");
-
-  }
+  document.getElementById("addOwnerMessage").innerHTML = "";
 
 }
-
 
 function renderOwnersList(owners){
 
@@ -7324,7 +7284,7 @@ function renderOwnersList(owners){
 
   box.innerHTML = "";
 
-  owners.forEach(function(owner,idx){
+  owners.forEach(function(name,idx){
 
     const card =
       document.createElement("div");
@@ -7333,9 +7293,7 @@ function renderOwnersList(owners){
 
     card.innerHTML =
       "<strong>Owner " + (idx + 1) + "</strong> → " +
-      escapeHtml(titleCaseName(owner.name)) +
-      "<br><span style='font-size:13px;color:#596273;'>PIN: <b>" +
-      escapeHtml(owner.pin) + "</b></span>";
+      escapeHtml(titleCaseName(name));
 
     box.appendChild(card);
 
@@ -7377,6 +7335,13 @@ async function addOwnerFromUsers(){
 
   }
 
+  const myPin =
+    prompt("Enter your own Owner PIN to confirm adding this owner:");
+
+  if(!myPin){
+    return;
+  }
+
   msg.innerHTML = '<div class="message">Saving...</div>';
 
   try{
@@ -7388,7 +7353,7 @@ async function addOwnerFromUsers(){
         body:JSON.stringify({
           action:"addOwner",
           ownerName:currentOwner,
-          ownerPin:usersAuthPin,
+          ownerPin:myPin.trim(),
           newName:name,
           newPin:pin
         })
@@ -7414,23 +7379,7 @@ async function addOwnerFromUsers(){
 
     await loadData();
 
-    const listResponse =
-      await fetch(API_URL,{
-        method:"POST",
-
-        body:JSON.stringify({
-          action:"getOwners",
-          ownerName:currentOwner,
-          ownerPin:usersAuthPin
-        })
-      });
-
-    const listData =
-      await listResponse.json();
-
-    if(listData.success){
-      renderOwnersList(listData.owners || []);
-    }
+    renderOwnersList(allData.owners || []);
 
   }catch(error){
 

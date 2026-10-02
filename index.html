@@ -7270,7 +7270,26 @@ function addAttendancePdfPage(doc,employeeName,records,year,month,isFirstPage){
 
   groupRecordsByDate(sorted).forEach(function(group){
 
-    group.rows.forEach(function(row){
+      group.rows.forEach(function(row){
+
+      /* Week Off, or any custom reason (e.g. "For Exam") instead of
+         real attendance: the Status cell is highlighted black with
+         white text. Normal attendance rows stay exactly as before. */
+
+      const isNonAttendance =
+        row.status === "Week Off" || isCustomOffReasonStatus(row.status);
+
+      const statusCell =
+        isNonAttendance
+          ? {
+              content: pdfStatusLabel(row.status),
+              styles: {
+                fillColor: [0,0,0],
+                textColor: [255,255,255],
+                fontStyle: "bold"
+              }
+            }
+          : pdfStatusLabel(row.status);
 
       body.push([
         formatDateDisplay(row.date),
@@ -7279,11 +7298,10 @@ function addAttendancePdfPage(doc,employeeName,records,year,month,isFirstPage){
         formatTimeDisplay(row.outTime) || "-",
         formatHoursDisplay(row.hoursWorked) || "-",
         row.otHours || "-",
-        pdfStatusLabel(row.status)
+        statusCell
       ]);
 
     });
-
     if(group.rows.length >= 2){
 
       const totals =

@@ -4587,7 +4587,28 @@ function saveReadRequestKeys(readSet){
   }
 
 }
+function applyBadgeCount(elementId,count){
 
+  const badge =
+    document.getElementById(elementId);
+
+  if(!badge){
+    return;
+  }
+
+  if(count > 0){
+
+    badge.textContent = String(count);
+
+    badge.classList.remove("hidden");
+
+  }else{
+
+    badge.classList.add("hidden");
+
+  }
+
+}
 
 /* First time on this device: past (already decided) Off Requests
    are treated as read, so only genuinely new/pending ones count. */

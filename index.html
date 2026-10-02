@@ -760,7 +760,9 @@ th{
 
 </div>
 
-
+<div id="sessionLoading" class="card hidden">
+  <p style="margin:0;text-align:center;">Loading...</p>
+</div>
 <!-- APP LOCK (Employee has App Lock ON -- ask for PIN again on reopen,
      without needing full name+PIN login again since the employee is
      already remembered on this device via the saved session). -->
@@ -2299,16 +2301,21 @@ async function loadData(){
 
       fillEmployeeList();
 
+      return true;
+
     }
+
+    return false;
 
   }catch(error){
 
     console.log(error);
 
+    return false;
+
   }
 
 }
-
 
 /* EMPLOYEE LIST (login dropdown + reset dropdown + owner download filter) */
 
@@ -7061,23 +7068,82 @@ function showEmployeeSettingsMessage(text){
 
 async function init(){
 
-  await loadData();
-
   const session =
     loadSession();
 
-  if(!session){
+  const hasSession =
+    !!session && (
+      (session.type === "employee" && !!session.name) ||
+      (session.type === "owner" &&
+        (session.name === "NAVIN" || session.name === "VARSHA"))
+    );
+
+  if(hasSession){
+
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("sessionLoading").classList.remove("hidden");
+
+  }
+
+  /* Try up to 3 times, so a slow/cold server doesn't log anyone out */
+
+  let loaded = false;
+
+  for(let attempt = 0; attempt < 3 && !loaded; attempt++){
+
+    loaded = await loadData();
+
+    if(!loaded && hasSession){
+      await new Promise(function(resolve){ setTimeout(resolve,1500); });
+    }
+
+  }
+
+  document.getElementById("sessionLoading").classList.add("hidden");
+
+  if(!hasSession){
+
+    if(session){
+      clearSession();
+    }
 
     return;
 
   }
 
-  if(
-    session.type === "employee" &&
-    allData.employees.some(function(n){
-      return n.toLowerCase() === session.name.toLowerCase();
-    })
-  ){
+  /* Data could not be loaded: keep the saved session (do NOT clear it)
+     and ask the user to reopen once the connection is back. */
+
+  if(!loaded){
+
+    document.getElementById("loginScreen").classList.remove("hidden");
+
+    showLoginMessage(
+      "Could not connect. Please check your internet and reopen the app."
+    );
+
+    return;
+
+  }
+
+  if(session.type === "employee"){
+
+    const stillExists =
+      allData.employees.some(function(n){
+        return n.toLowerCase() === session.name.toLowerCase();
+      });
+
+    if(!stillExists){
+
+      /* Employee was removed by the owner -- only now clear the session */
+
+      clearSession();
+
+      document.getElementById("loginScreen").classList.remove("hidden");
+
+      return;
+
+    }
 
     if(isAppLockEnabled(session.name)){
 
@@ -7091,20 +7157,11 @@ async function init(){
 
     }
 
-  }else if(
-    session.type === "owner" &&
-    (session.name === "NAVIN" || session.name === "VARSHA")
-  ){
+  }else{
 
     currentOwner = session.name;
 
     openOwnerScreen();
-
-  }else{
-
-    /* Saved session no longer valid (e.g. employee was removed) */
-
-    clearSession();
 
   }
 

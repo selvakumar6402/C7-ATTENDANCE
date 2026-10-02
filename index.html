@@ -1036,7 +1036,9 @@ th{
    <button class="primary" style="margin-top:10px;" onclick="downloadEmployeeMonthPdf()">
   Download Selected Month PDF
 </button>
-
+<button class="danger" style="margin-top:10px;" onclick="deleteEmployeeAttendance()">
+  Delete Attendance (From – To dates)
+</button>
 <div id="empDownloadMessage"></div>
 
     </div>
@@ -6685,7 +6687,107 @@ function downloadEmployeeAttendance(){
 
 }
 
+async function deleteEmployeeAttendance(){
 
+  const from =
+    document.getElementById("empFromDate").value;
+
+  const to =
+    document.getElementById("empToDate").value;
+
+  if(!from || !to){
+
+    showEmpDownloadMessage("Please select both From Date and To Date.");
+
+    return;
+
+  }
+
+  if(from > to){
+
+    showEmpDownloadMessage("From Date cannot be after To Date.");
+
+    return;
+
+  }
+
+  const confirmed =
+    confirm(
+      "Do you want to delete attendance from " +
+      from +
+      " to " +
+      to +
+      "? This cannot be undone."
+    );
+
+  if(!confirmed){
+
+    return;
+
+  }
+
+  showEmpDownloadMessage("Deleting...");
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"deleteAttendanceRange",
+          name:currentEmployee,
+          fromDate:from,
+          toDate:to
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(data.success){
+
+      allData.attendance =
+        allData.attendance.filter(function(row){
+
+          return !(
+            row.name === currentEmployee &&
+            row.date >= from &&
+            row.date <= to
+          );
+
+        });
+
+      /* If the deleted range removed an unfinished check-in, clear
+         the Attendance Entry screen so it doesn't show stale times. */
+
+      if(empInTimeRaw && !findOpenRecord(currentEmployee)){
+        resetTimeEntry();
+      }
+
+      showEmpDownloadMessage("Attendance deleted successfully.");
+
+      renderEmployeeAttendance();
+
+      renderEmployeeAttendanceSummary();
+
+    }else{
+
+      showEmpDownloadMessage(
+        data.message || "Could not delete attendance."
+      );
+
+    }
+
+  }catch(error){
+
+    showEmpDownloadMessage(
+      "Could not delete attendance. Please check your connection."
+    );
+
+  }
+
+}
 function showEmpDownloadMessage(text){
 
   const el =

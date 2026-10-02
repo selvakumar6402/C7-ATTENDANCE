@@ -3745,10 +3745,9 @@ function renderEmployeeAttendance(){
 
   tbody.innerHTML = "";
 
-  const records =
-    allData.attendance
+ const records =
+    filterRecordsByMonth(allData.attendance,employeeSummaryYear,employeeSummaryMonth)
       .filter(function(row){
-
         return row.name === currentEmployee;
 
       })
@@ -3764,8 +3763,9 @@ function renderEmployeeAttendance(){
 
   if(records.length === 0){
 
-    tbody.innerHTML =
-      "<tr><td colspan='6'>No attendance records yet.</td></tr>";
+     tbody.innerHTML =
+      "<tr><td colspan='6'>No attendance records found for " +
+      SUMMARY_MONTH_NAMES[employeeSummaryMonth] + " " + employeeSummaryYear + ".</td></tr>";
 
     return;
 
@@ -5436,7 +5436,9 @@ function changeEmployeeSummaryMonth(delta){
     employeeSummaryYear++;
   }
 
-  renderEmployeeAttendanceSummary();
+   renderEmployeeAttendanceSummary();
+
+  renderEmployeeAttendance();
 
 }
 

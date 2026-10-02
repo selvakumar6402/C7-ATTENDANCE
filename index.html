@@ -7217,7 +7217,7 @@ function addAttendancePdfPage(doc,employeeName,records,year,month,isFirstPage){
   doc.text("Employee: " + employeeName,14,26);
   doc.text("Month: " + monthLabel,14,32);
 
-  const sorted =
+   const sorted =
     records.slice().sort(function(a,b){
 
       if(a.date < b.date){ return -1; }
@@ -7228,40 +7228,92 @@ function addAttendancePdfPage(doc,employeeName,records,year,month,isFirstPage){
 
     });
 
-  const countable =
-    sorted.filter(function(row){
-      return isCountableWorkingDayStatus(row.status);
-    });
+  /* Total Working Hours for the black summary box: calculated
+     EXACTLY as before (countable days only, daily totals summed). */
 
-  const groups =
-    groupRecordsByDate(countable);
+  const countableGroups =
+    groupRecordsByDate(
+      sorted.filter(function(row){
+        return isCountableWorkingDayStatus(row.status);
+      })
+    );
 
   let totalHours = 0;
 
-  const body =
-    groups.map(function(group){
+  countableGroups.forEach(function(group){
+
+    const t =
+      computeGroupTotals(group.rows);
+
+    totalHours += parseFloat(t.hoursWorked) || 0;
+
+  });
+
+  /* PDF table: every record of the month, same as the on-screen
+     Attendance Download & View table (each shift is its own row,
+     plus a Daily Total row when a date has 2+ shifts). */
+
+  function pdfStatusLabel(status){
+
+    const s =
+      String(status || "Pending");
+
+    if(s.toLowerCase() === "open"){
+      return "On Duty";
+    }
+
+    return s;
+
+  }
+
+  const body = [];
+
+  groupRecordsByDate(sorted).forEach(function(group){
+
+    group.rows.forEach(function(row){
+
+      body.push([
+        formatDateDisplay(row.date),
+        getDayNameFromDate(row.date),
+        formatTimeDisplay(row.inTime) || "-",
+        formatTimeDisplay(row.outTime) || "-",
+        formatHoursDisplay(row.hoursWorked) || "-",
+        row.otHours || "-",
+        pdfStatusLabel(row.status)
+      ]);
+
+    });
+
+    if(group.rows.length >= 2){
 
       const totals =
         computeGroupTotals(group.rows);
 
-      totalHours += parseFloat(totals.hoursWorked) || 0;
+      const totalStyle =
+        { fontStyle:"bold", fillColor:[247,248,250] };
 
-      return [
-        formatDateDisplay(group.date),
-        getDayNameFromDate(group.date),
-        formatHoursDisplay(totals.hoursWorked) || "-",
-        totals.otHours
-      ];
+      body.push([
+        {
+          content: "Daily Total (" + group.rows.length + " shifts)",
+          colSpan: 4,
+          styles: { fontStyle:"bold", fillColor:[247,248,250], halign:"right" }
+        },
+        { content: formatHoursDisplay(totals.hoursWorked), styles: totalStyle },
+        { content: totals.otHours, styles: totalStyle },
+        { content: "", styles: totalStyle }
+      ]);
 
-    });
+    }
+
+  });
 
   doc.autoTable({
     startY: 38,
-    head: [["Date","Day","Hours Worked","OT Hours"]],
+    head: [["Date","Day","In Time","Out Time","Hours Worked","OT Hours","Status"]],
     body: body,
     theme: "grid",
     headStyles: { fillColor:[30,41,59], textColor:255 },
-    styles: { fontSize:10, cellPadding:2.5 },
+    styles: { fontSize:9, cellPadding:2.2 },
     margin: { left:14, right:14 }
   });
 

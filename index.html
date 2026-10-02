@@ -1297,6 +1297,10 @@ th{
         <div class="tile-title">Employee Management</div>
       </button>
 
+      <button type="button" class="tile" onclick="openUsersSection()">
+        <div class="tile-icon">🔑</div>
+        <div class="tile-title">Users</div>
+      </button>
     </div>
 
   </div>
@@ -1469,7 +1473,32 @@ th{
 
   </div>
 
+  <!-- SECTION 5: USERS (OWNERS) -->
+  <div id="ownerSection5" class="card hidden">
 
+    <button type="button" class="secondary back-btn" onclick="showOwnerCategoryGrid()">
+      ← Back
+    </button>
+
+    <h2>Users</h2>
+
+    <div id="ownersListBox"></div>
+
+    <h3 style="margin-top:20px;">Add Owner</h3>
+
+    <label>Owner Name</label>
+    <input type="text" id="newOwnerName" placeholder="Enter owner name">
+
+    <label>4 Digit PIN</label>
+    <input type="password" id="newOwnerPin" inputmode="numeric" maxlength="4" placeholder="Enter PIN">
+
+    <button class="success" onclick="addOwnerFromUsers()">
+      Add Owner
+    </button>
+
+    <div id="addOwnerMessage"></div>
+
+  </div>
   <!-- SECTION 4: EMPLOYEE MANAGEMENT -->
   <div id="ownerSection4" class="card hidden">
 
@@ -2299,10 +2328,11 @@ async function loadData(){
 
       allData = data;
 
-      fillEmployeeList();
+          fillEmployeeList();
+
+      fillOwnerLists();
 
       return true;
-
     }
 
     return false;
@@ -2456,7 +2486,49 @@ function fillEmployeeList(){
 
 }
 
+function fillOwnerLists(){
 
+  const owners =
+    allData.owners || [];
+
+  [
+    ["ownerName","Select Owner"],
+    ["resetOwnerTarget","Select Owner"],
+    ["resetOwnerAuth","Select the OTHER Owner"]
+  ].forEach(function(item){
+
+    const select =
+      document.getElementById(item[0]);
+
+    if(!select || owners.length === 0){
+      return;
+    }
+
+    const previous =
+      select.value;
+
+    select.innerHTML =
+      '<option value="">' + item[1] + '</option>';
+
+    owners.forEach(function(name){
+
+      const option =
+        document.createElement("option");
+
+      option.value = name;
+      option.textContent = name;
+
+      select.appendChild(option);
+
+    });
+
+    if(previous && owners.indexOf(previous) !== -1){
+      select.value = previous;
+    }
+
+  });
+
+}
 /* FIND ACTIVE (UNFINISHED) CHECK-IN RECORD FOR AN EMPLOYEE */
 
 function findOpenRecord(name){
@@ -2862,7 +2934,7 @@ function openOwnerScreen(){
  */
 
 function showOwnerCategoryGrid(){
-
+  usersAuthPin = "";
   const grid =
     document.getElementById("ownerCategoryGrid");
 
@@ -2870,7 +2942,7 @@ function showOwnerCategoryGrid(){
     grid.classList.remove("hidden");
   }
 
-  for(let i = 1; i <= 4; i++){
+  for(let i = 1; i <= 5; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -2893,7 +2965,7 @@ function openOwnerSection(sectionNumber){
     grid.classList.add("hidden");
   }
 
-  for(let i = 1; i <= 4; i++){
+  for(let i = 1; i <= 5; i++){
 
     const section =
       document.getElementById("ownerSection" + i);
@@ -7074,8 +7146,7 @@ async function init(){
   const hasSession =
     !!session && (
       (session.type === "employee" && !!session.name) ||
-      (session.type === "owner" &&
-        (session.name === "NAVIN" || session.name === "VARSHA"))
+           (session.type === "owner" && !!session.name)
     );
 
   if(hasSession){
@@ -7157,7 +7228,22 @@ async function init(){
 
     }
 
-  }else{
+   }else{
+
+    const ownerStillExists =
+      (allData.owners || []).some(function(n){
+        return n.toLowerCase() === session.name.toLowerCase();
+      });
+
+    if(!ownerStillExists){
+
+      clearSession();
+
+      document.getElementById("loginScreen").classList.remove("hidden");
+
+      return;
+
+    }
 
     currentOwner = session.name;
 
@@ -7166,7 +7252,194 @@ async function init(){
   }
 
 }
+  /* ================= OWNER USERS (Users tile) ================= */
 
+/* Held in memory only while the Users section is open. Never saved. */
+let usersAuthPin = "";
+
+function titleCaseName(name){
+
+  const s =
+    String(name || "").toLowerCase();
+
+  return s.charAt(0).toUpperCase() + s.slice(1);
+
+}
+
+
+async function openUsersSection(){
+
+  const pin =
+    prompt("Enter your Owner PIN to open Users:");
+
+  if(!pin){
+    return;
+  }
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"getOwners",
+          ownerName:currentOwner,
+          ownerPin:pin.trim()
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(!data.success){
+
+      alert(data.message || "Could not open Users.");
+
+      return;
+
+    }
+
+    usersAuthPin = pin.trim();
+
+    openOwnerSection(5);
+
+    renderOwnersList(data.owners || []);
+
+    document.getElementById("addOwnerMessage").innerHTML = "";
+
+  }catch(error){
+
+    alert("Could not open Users. Please check your connection.");
+
+  }
+
+}
+
+
+function renderOwnersList(owners){
+
+  const box =
+    document.getElementById("ownersListBox");
+
+  box.innerHTML = "";
+
+  owners.forEach(function(owner,idx){
+
+    const card =
+      document.createElement("div");
+
+    card.className = "subcard";
+
+    card.innerHTML =
+      "<strong>Owner " + (idx + 1) + "</strong> → " +
+      escapeHtml(titleCaseName(owner.name)) +
+      "<br><span style='font-size:13px;color:#596273;'>PIN: <b>" +
+      escapeHtml(owner.pin) + "</b></span>";
+
+    box.appendChild(card);
+
+  });
+
+}
+
+
+async function addOwnerFromUsers(){
+
+  const nameField =
+    document.getElementById("newOwnerName");
+
+  const pinField =
+    document.getElementById("newOwnerPin");
+
+  const name =
+    nameField.value.trim();
+
+  const pin =
+    pinField.value.trim();
+
+  const msg =
+    document.getElementById("addOwnerMessage");
+
+  if(!name || !pin){
+
+    msg.innerHTML = '<div class="message">Please enter owner name and PIN.</div>';
+
+    return;
+
+  }
+
+  if(!/^\d{4}$/.test(pin)){
+
+    msg.innerHTML = '<div class="message">PIN must be exactly 4 digits.</div>';
+
+    return;
+
+  }
+
+  msg.innerHTML = '<div class="message">Saving...</div>';
+
+  try{
+
+    const response =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"addOwner",
+          ownerName:currentOwner,
+          ownerPin:usersAuthPin,
+          newName:name,
+          newPin:pin
+        })
+      });
+
+    const data =
+      await response.json();
+
+    if(!data.success){
+
+      msg.innerHTML =
+        '<div class="message">' + escapeHtml(data.message || "Could not add owner.") + '</div>';
+
+      return;
+
+    }
+
+    nameField.value = "";
+
+    pinField.value = "";
+
+    msg.innerHTML = '<div class="message">Owner added successfully.</div>';
+
+    await loadData();
+
+    const listResponse =
+      await fetch(API_URL,{
+        method:"POST",
+
+        body:JSON.stringify({
+          action:"getOwners",
+          ownerName:currentOwner,
+          ownerPin:usersAuthPin
+        })
+      });
+
+    const listData =
+      await listResponse.json();
+
+    if(listData.success){
+      renderOwnersList(listData.owners || []);
+    }
+
+  }catch(error){
+
+    msg.innerHTML =
+      '<div class="message">Could not add owner. Please check your connection.</div>';
+
+  }
+
+}
 init();
 /* ================= ATTENDANCE PDF DOWNLOAD (selected month) =================
  * Uses the EXISTING functions unchanged: filterRecordsByMonth,

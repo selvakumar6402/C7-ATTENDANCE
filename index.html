@@ -7,7 +7,8 @@
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="theme-color" content="#1e293b">
 <title>C7 Attendance</title>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box}
 
@@ -1030,7 +1031,11 @@ th{
         Download CSV
       </button>
 
-      <div id="empDownloadMessage"></div>
+   <button class="primary" style="margin-top:10px;" onclick="downloadEmployeeMonthPdf()">
+  Download Selected Month PDF
+</button>
+
+<div id="empDownloadMessage"></div>
 
     </div>
 
@@ -1311,7 +1316,11 @@ th{
 
     <label>Select Month</label>
 
-    <input type="month" id="ownerSelectMonth" onchange="onOwnerSelectMonthChange()">
+ <input type="month" id="ownerSelectMonth" onchange="onOwnerSelectMonthChange()">
+
+<button type="button" class="primary" style="margin-bottom:14px;" onclick="downloadOwnerMonthPdf()">
+  Download Selected Month PDF
+</button>
 
     <div class="summary-heading">
 
@@ -7102,7 +7111,262 @@ async function init(){
 }
 
 init();
+/* ================= ATTENDANCE PDF DOWNLOAD (selected month) =================
+ * Uses the EXISTING functions unchanged: filterRecordsByMonth,
+ * groupRecordsByDate, computeGroupTotals, computeTotalWorkingDays,
+ * computeTotalOTHours, formatHoursDisplay, formatHoursMinutesLong.
+ * Only reads data -- nothing is saved or changed.
+ */
 
+const PDF_DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+function getDayNameFromDate(dateStr){
+
+  const parts =
+    String(dateStr).split("-");
+
+  if(parts.length !== 3){
+    return "";
+  }
+
+  const d =
+    new Date(
+      parseInt(parts[0],10),
+      parseInt(parts[1],10) - 1,
+      parseInt(parts[2],10)
+    );
+
+  return PDF_DAY_NAMES[d.getDay()] || "";
+
+}
+
+
+function addAttendancePdfPage(doc,employeeName,records,year,month,isFirstPage){
+
+  if(!isFirstPage){
+    doc.addPage();
+  }
+
+  const monthLabel =
+    SUMMARY_MONTH_NAMES[month] + " " + year;
+
+  doc.setTextColor(0,0,0);
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(18);
+  doc.text("C7 Attendance",14,18);
+
+  doc.setFont("helvetica","normal");
+  doc.setFontSize(11);
+  doc.text("Employee: " + employeeName,14,26);
+  doc.text("Month: " + monthLabel,14,32);
+
+  const sorted =
+    records.slice().sort(function(a,b){
+
+      if(a.date < b.date){ return -1; }
+      if(a.date > b.date){ return 1; }
+      if(a.rowId < b.rowId){ return -1; }
+      if(a.rowId > b.rowId){ return 1; }
+      return 0;
+
+    });
+
+  const countable =
+    sorted.filter(function(row){
+      return isCountableWorkingDayStatus(row.status);
+    });
+
+  const groups =
+    groupRecordsByDate(countable);
+
+  let totalHours = 0;
+
+  const body =
+    groups.map(function(group){
+
+      const totals =
+        computeGroupTotals(group.rows);
+
+      totalHours += parseFloat(totals.hoursWorked) || 0;
+
+      return [
+        formatDateDisplay(group.date),
+        getDayNameFromDate(group.date),
+        formatHoursDisplay(totals.hoursWorked) || "-",
+        totals.otHours
+      ];
+
+    });
+
+  doc.autoTable({
+    startY: 38,
+    head: [["Date","Day","Hours Worked","OT Hours"]],
+    body: body,
+    theme: "grid",
+    headStyles: { fillColor:[30,41,59], textColor:255 },
+    styles: { fontSize:10, cellPadding:2.5 },
+    margin: { left:14, right:14 }
+  });
+
+  let y =
+    doc.lastAutoTable.finalY + 8;
+
+  const pageHeight =
+    doc.internal.pageSize.getHeight();
+
+  if(y + 36 > pageHeight - 10){
+    doc.addPage();
+    y = 20;
+  }
+
+  const summaryRows = [
+    ["Total Working Days", formatWorkingDaysLabel(computeTotalWorkingDays(records))],
+    ["Total Working Hours", formatHoursMinutesLong(totalHours.toFixed(2))],
+    ["Total OT Hours", formatHoursMinutesLong(computeTotalOTHours(records))]
+  ];
+
+  doc.setFillColor(0,0,0);
+  doc.roundedRect(14,y,182,34,3,3,"F");
+
+  doc.setTextColor(255,255,255);
+  doc.setFont("helvetica","bold");
+  doc.setFontSize(12);
+
+  summaryRows.forEach(function(r,i){
+
+    const lineY = y + 11 + i * 9;
+
+    doc.text(r[0],20,lineY);
+    doc.text(r[1],190,lineY,{ align:"right" });
+
+  });
+
+  doc.setTextColor(0,0,0);
+
+}
+
+
+function downloadEmployeeMonthPdf(){
+
+  if(!window.jspdf){
+
+    showEmpDownloadMessage(
+      "PDF library could not load. Please check your internet connection and refresh."
+    );
+
+    return;
+
+  }
+
+  const records =
+    filterRecordsByMonth(
+      allData.attendance.filter(function(row){
+        return row.name === currentEmployee;
+      }),
+      employeeSummaryYear,
+      employeeSummaryMonth
+    );
+
+  if(computeTotalWorkingDays(records) === 0){
+
+    showEmpDownloadMessage(
+      "No attendance records found for " +
+      SUMMARY_MONTH_NAMES[employeeSummaryMonth] + " " + employeeSummaryYear + "."
+    );
+
+    return;
+
+  }
+
+  const doc =
+    new window.jspdf.jsPDF();
+
+  addAttendancePdfPage(
+    doc,
+    currentEmployee,
+    records,
+    employeeSummaryYear,
+    employeeSummaryMonth,
+    true
+  );
+
+  doc.save(
+    currentEmployee.replace(/[^a-z0-9]/gi,"_") +
+    "_Attendance_" + SUMMARY_MONTH_NAMES[employeeSummaryMonth] + "_" + employeeSummaryYear + ".pdf"
+  );
+
+  showEmpDownloadMessage("");
+
+}
+
+
+function downloadOwnerMonthPdf(){
+
+  if(!window.jspdf){
+
+    alert("PDF library could not load. Please check your internet connection and refresh.");
+
+    return;
+
+  }
+
+  const monthRecords =
+    filterRecordsByMonth(allData.attendance,ownerSummaryYear,ownerSummaryMonth)
+      .filter(function(row){
+        return !isExcludedAttendanceName(row.name);
+      });
+
+  const recordsByEmployee = {};
+
+  monthRecords.forEach(function(row){
+
+    if(!recordsByEmployee[row.name]){
+      recordsByEmployee[row.name] = [];
+    }
+
+    recordsByEmployee[row.name].push(row);
+
+  });
+
+  const names =
+    Object.keys(recordsByEmployee)
+      .filter(function(name){
+        return computeTotalWorkingDays(recordsByEmployee[name]) > 0;
+      })
+      .sort();
+
+  if(names.length === 0){
+
+    alert(
+      "No attendance records found for " +
+      SUMMARY_MONTH_NAMES[ownerSummaryMonth] + " " + ownerSummaryYear + "."
+    );
+
+    return;
+
+  }
+
+  const doc =
+    new window.jspdf.jsPDF();
+
+  names.forEach(function(name,index){
+
+    addAttendancePdfPage(
+      doc,
+      name,
+      recordsByEmployee[name],
+      ownerSummaryYear,
+      ownerSummaryMonth,
+      index === 0
+    );
+
+  });
+
+  doc.save(
+    "Attendance_" + SUMMARY_MONTH_NAMES[ownerSummaryMonth] + "_" + ownerSummaryYear + ".pdf"
+  );
+
+}
 </script>
 
 

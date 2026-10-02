@@ -2985,7 +2985,11 @@ function openOwnerSection(sectionNumber){
     renderOwnerAttendance();
 
   }
+  if(sectionNumber === 3){
 
+    markCurrentRequestsAsRead();
+
+  }
 }
 
 
@@ -4565,36 +4569,143 @@ function renderManualRequests(){
 
 function updateManualReqBadge(count){
 
+  const REQUESTS_READ_KEY = "c7_attendance_requests_read";
+
+function saveReadRequestKeys(readSet){
+
+  try{
+
+    localStorage.setItem(
+      REQUESTS_READ_KEY,
+      JSON.stringify(Array.from(readSet))
+    );
+
+  }catch(error){
+
+    console.log(error);
+
+  }
+
+}
+
+
+/* First time on this device: past (already decided) Off Requests
+   are treated as read, so only genuinely new/pending ones count. */
+
+function getReadRequestKeys(){
+
+  try{
+
+    const raw =
+      localStorage.getItem(REQUESTS_READ_KEY);
+
+    if(raw === null){
+
+      const seed = new Set();
+
+      (allData.offRequests || []).forEach(function(r){
+
+        if(r.status !== "Pending"){
+          seed.add("O:" + r.requestId);
+        }
+
+      });
+
+      saveReadRequestKeys(seed);
+
+      return seed;
+
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    return new Set(Array.isArray(parsed) ? parsed : []);
+
+  }catch(error){
+
+    return new Set();
+
+  }
+
+}
+
+
+function computeUnreadRequestCount(){
+
+  const readSet =
+    getReadRequestKeys();
+
+  let count = 0;
+
+  (allData.manualRequests || []).forEach(function(r){
+
+    if(!readSet.has("M:" + r.requestId)){
+      count++;
+    }
+
+  });
+
+  (allData.offRequests || []).forEach(function(r){
+
+    if(!readSet.has("O:" + r.requestId)){
+      count++;
+    }
+
+  });
+
+  return count;
+
+}
+
+
+function addCurrentRequestsToReadSet(){
+
+  const readSet =
+    getReadRequestKeys();
+
+  (allData.manualRequests || []).forEach(function(r){
+    readSet.add("M:" + r.requestId);
+  });
+
+  (allData.offRequests || []).forEach(function(r){
+    readSet.add("O:" + r.requestId);
+  });
+
+  saveReadRequestKeys(readSet);
+
+}
+
+
+function markCurrentRequestsAsRead(){
+
+  addCurrentRequestsToReadSet();
+
+  updateManualReqBadge();
+
+}
+
+
+function updateManualReqBadge(){
+
+  /* If the Owner is already looking at the requests section, anything
+     that arrives is seen immediately, so it is marked read at once. */
+
+  const section3 =
+    document.getElementById("ownerSection3");
+
+  if(section3 && !section3.classList.contains("hidden")){
+    addCurrentRequestsToReadSet();
+  }
+
+  const count =
+    computeUnreadRequestCount();
+
   applyBadgeCount("manualReqBadge",count);
 
   applyBadgeCount("manualReqTileBadge",count);
 
 }
-
-
-function applyBadgeCount(elementId,count){
-
-  const badge =
-    document.getElementById(elementId);
-
-  if(!badge){
-    return;
-  }
-
-  if(count > 0){
-
-    badge.textContent = String(count);
-
-    badge.classList.remove("hidden");
-
-  }else{
-
-    badge.classList.add("hidden");
-
-  }
-
-}
-
 
 /* ================= UNREAD "VIEW EMPLOYEE ATTENDANCE" BADGE =================
  * Separate from the Manual Check-In/Check-Out Request badge above --
